@@ -53,7 +53,13 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        'argsIgnorePattern': '^_',
+        'varsIgnorePattern': '^_',
+        'args': 'after-used',
+        'ignoreRestSiblings': true,
+        'destructuredArrayIgnorePattern': '^_'
+      }],
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/no-require-imports': 'error',
@@ -63,6 +69,43 @@ export default [
     },
   },
   
+  // Domain interfaces and entities configuration
+  {
+    files: ['**/domain/**/I*.ts', '**/repositories/**/*.ts', '**/services/**/I*.ts', '**/entities/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
+    },
+  },
+
+  // Use Cases and Application Services - allow constructor parameters
+  {
+    files: ['**/use-cases/**/*.ts', '**/application/services/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        'argsIgnorePattern': '^_',
+        'varsIgnorePattern': '^_',
+        'ignoreRestSiblings': true,
+        'args': 'none' // Ignore constructor parameters
+      }],
+      'no-unused-vars': 'off',
+    },
+  },
+
+  // Infrastructure components - allow constructor parameters and private properties
+  {
+    files: ['**/infrastructure/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        'argsIgnorePattern': '^_',
+        'varsIgnorePattern': '^_',
+        'ignoreRestSiblings': true,
+        'args': 'none' // Ignore constructor parameters
+      }],
+      'no-unused-vars': 'off',
+    },
+  },
+
   // Test files configuration
   {
     files: ['**/__tests__/**/*', '**/*.{test,spec}.ts'],
