@@ -1,6 +1,6 @@
 /**
  * Interfaces Layer Barrel Export
- * 
+ *
  * This file provides a central export point for all interfaces layer components,
  * making it easier to import interfaces functionality from other parts of the application.
  */
@@ -25,16 +25,16 @@ export * from './sqs/schemas/ProcessCompletedAppointmentSchema.js';
 export * from './shared/httpUtils.js';
 export * from './shared/sqsUtils.js';
 export {
-    API_ENDPOINTS,
-    SQS_QUEUES,
-    HTTP_METHODS,
-    CONTENT_TYPES,
-    HTTP_STATUS_CODES,
-    VALIDATION_LIMITS,
-    SUPPORTED_COUNTRIES,
-    APPOINTMENT_STATUSES,
-    LAMBDA_FUNCTIONS,
-    ENV_VARS,
-    type SupportedCountry,
-    type AppointmentStatus
+  API_ENDPOINTS,
+  SQS_QUEUES,
+  HTTP_METHODS,
+  CONTENT_TYPES,
+  HTTP_STATUS_CODES,
+  VALIDATION_LIMITS,
+  SUPPORTED_COUNTRIES,
+  APPOINTMENT_STATUSES,
+  LAMBDA_FUNCTIONS,
+  ENV_VARS,
+  type SupportedCountry,
+  type AppointmentStatus,
 } from './shared/config.js';

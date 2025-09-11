@@ -7,7 +7,7 @@ import { MessageMapper } from './MessageMapper.js';
 
 /**
  * SNS implementation of the event publisher interface.
- * 
+ *
  * Publishes appointment messages to SNS topic with message attributes for country filtering.
  * The SNS topic has subscriptions to country-specific SQS queues using filter policies.
  */
@@ -19,25 +19,54 @@ export class SNSMessagePublisher implements IEventPublisher {
 
   /**
    * Creates a new SNS message publisher instance.
-   * 
-   * @param region - AWS region for SNS client
-   * @param topicArn - ARN of the SNS topic to publish to
+   *
+   * @param config - Configuration object
+   * @param config.topicArn - ARN of the SNS topic to publish to
+   * @param config.region - AWS region for SNS client (optional, defaults to 'us-east-1')
    */
-  constructor(region: string = 'us-east-1', topicArn: string) {
-    this.snsClient = new SNSClient({ region });
+  constructor({
+    topicArn,
+    region = 'us-east-1',
+  }: {
+    topicArn: string;
+    region?: string;
+  }) {
+    // Debug logging
+    this.logger = createLogger({ component: 'SNSMessagePublisher' });
+    this.logger.debug(
+      `Constructor called with topicArn: ${JSON.stringify(topicArn)}, type: ${typeof topicArn}`
+    );
+
+    // Configure SNS client with LocalStack endpoint if available
+    const clientConfig = {
+      region,
+      ...(process.env.AWS_ENDPOINT_URL && {
+        endpoint: process.env.AWS_ENDPOINT_URL,
+        credentials: {
+          accessKeyId: 'test',
+          secretAccessKey: 'test',
+        },
+      }),
+    };
+
+    this.snsClient = new SNSClient(clientConfig);
     this.topicArn = topicArn;
     this.messageMapper = new MessageMapper();
 
-    this.logger.info(`SNS Message Publisher initialized for topic: ${topicArn}`);
+    this.logger.info(
+      `SNS Message Publisher initialized for topic: ${topicArn}`
+    );
   }
 
   /**
    * Publishes an appointment confirmed event to SNS.
-   * 
+   *
    * @param event - The appointment confirmed event to publish
    * @throws {InfrastructureError} When SNS publish operation fails
    */
-  async publishAppointmentConfirmed(event: AppointmentConfirmedEvent): Promise<void> {
+  async publishAppointmentConfirmed(
+    event: AppointmentConfirmedEvent
+  ): Promise<void> {
     try {
       const snsMessage = this.messageMapper.toSNSMessage(event);
 
@@ -50,16 +79,23 @@ export class SNSMessagePublisher implements IEventPublisher {
 
       const result = await this.snsClient.send(command);
 
-      this.logger.info(`Appointment confirmed event published to SNS: ${result.MessageId} for appointment ${event.detail.appointmentId}`);
-
+      this.logger.info(
+        `Appointment confirmed event published to SNS: ${result.MessageId} for appointment ${event.detail.appointmentId}`
+      );
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to publish appointment confirmed event to SNS: ${errorMessage} for appointment ${event.detail.appointmentId}`);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to publish appointment confirmed event to SNS: ${errorMessage} for appointment ${event.detail.appointmentId}`
+      );
 
       throw new InfrastructureError(
         'SNS publish appointment confirmed',
         errorMessage,
-        { appointmentId: event.detail.appointmentId, countryISO: event.detail.countryISO }
+        {
+          appointmentId: event.detail.appointmentId,
+          countryISO: event.detail.countryISO,
+        }
       );
     }
   }
@@ -67,7 +103,7 @@ export class SNSMessagePublisher implements IEventPublisher {
   /**
    * Publishes a generic event to SNS.
    * Used by the CreateAppointment use case to publish appointment creation events.
-   * 
+   *
    * @param eventData - Generic event data to publish
    * @throws {InfrastructureError} When SNS publish operation fails
    */
@@ -84,7 +120,17 @@ export class SNSMessagePublisher implements IEventPublisher {
         throw new Error('Invalid or missing countryISO in event detail');
       }
 
-      const snsMessage = this.messageMapper.toSNSGenericMessage(eventData, countryISO);
+      const snsMessage = this.messageMapper.toSNSGenericMessage(
+        eventData,
+        countryISO
+      );
+
+      this.logger.debug(
+        `SNS message prepared - Topic: ${this.topicArn}, Subject: ${snsMessage.subject}`
+      );
+      this.logger.debug(
+        `Message attributes: ${JSON.stringify(snsMessage.messageAttributes)}`
+      );
 
       const command = new PublishCommand({
         TopicArn: this.topicArn,
@@ -93,26 +139,31 @@ export class SNSMessagePublisher implements IEventPublisher {
         MessageAttributes: snsMessage.messageAttributes,
       });
 
+      this.logger.debug(`Sending SNS command to topic: ${this.topicArn}`);
+
       const result = await this.snsClient.send(command);
 
-      this.logger.info(`Generic event published to SNS: ${result.MessageId} for ${eventData.source}/${eventData.detailType} (${countryISO})`);
-
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Failed to publish generic event to SNS: ${errorMessage} for ${eventData.source}/${eventData.detailType}`);
-
-      throw new InfrastructureError(
-        'SNS publish generic event',
-        errorMessage,
-        { source: eventData.source, detailType: eventData.detailType }
+      this.logger.info(
+        `Generic event published to SNS: ${result.MessageId} for ${eventData.source}/${eventData.detailType} (${countryISO})`
       );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to publish generic event to SNS: ${errorMessage} for ${eventData.source}/${eventData.detailType}`
+      );
+
+      throw new InfrastructureError('SNS publish generic event', errorMessage, {
+        source: eventData.source,
+        detailType: eventData.detailType,
+      });
     }
   }
 
   /**
    * Health check method to verify SNS connectivity.
    * Can be used for monitoring and diagnostics.
-   * 
+   *
    * @returns Promise that resolves if SNS is accessible
    */
   async healthCheck(): Promise<boolean> {
@@ -121,7 +172,10 @@ export class SNSMessagePublisher implements IEventPublisher {
       const command = new PublishCommand({
         TopicArn: this.topicArn,
         Subject: 'Health Check',
-        Message: JSON.stringify({ type: 'health-check', timestamp: new Date().toISOString() }),
+        Message: JSON.stringify({
+          type: 'health-check',
+          timestamp: new Date().toISOString(),
+        }),
         MessageAttributes: {
           type: {
             DataType: 'String',
@@ -133,9 +187,9 @@ export class SNSMessagePublisher implements IEventPublisher {
       await this.snsClient.send(command);
       this.logger.debug('SNS health check passed');
       return true;
-
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       this.logger.warn(`SNS health check failed: ${errorMessage}`);
       return false;
     }

@@ -9,34 +9,44 @@ import { z } from 'zod';
  * Environment variables schema with validation rules
  */
 const envSchema = z.object({
-    // AWS Region
-    AWS_REGION: z.string().default('us-east-1'),
+  // AWS Region
+  AWS_REGION: z.string().default('us-east-1'),
 
-    // DynamoDB
-    DYNAMODB_TABLE_NAME: z.string().default('appointments'),
+  // DynamoDB
+  APPOINTMENTS_TABLE: z
+    .string()
+    .default('medical-appointments-api-appointments-dev'),
 
-    // SNS
-    SNS_TOPIC_ARN: z.string().optional(),
+  // SNS
+  SNS_TOPIC_ARN: z
+    .string()
+    .default(
+      'arn:aws:sns:us-east-1:000000000000:medical-appointments-api-appointment-notifications-dev'
+    ),
 
-    // SQS
-    SQS_PE_URL: z.string().optional(),
-    SQS_CL_URL: z.string().optional(),
-    SQS_COMPLETION_URL: z.string().optional(),
+  // SQS
+  SQS_PE_URL: z.string().optional(),
+  SQS_CL_URL: z.string().optional(),
+  SQS_COMPLETION_URL: z.string().optional(),
 
-    // EventBridge
-    EVENT_BUS_NAME: z.string().default('default'),
+  // EventBridge
+  EVENT_BUS_NAME: z.string().default('default'),
 
-    // RDS (via SSM parameters - will be resolved at runtime)
-    DB_HOST_PE_PARAM: z.string().default('/appointments/db/pe/host'),
-    DB_HOST_CL_PARAM: z.string().default('/appointments/db/cl/host'),
-    DB_SECRET_ARN: z.string().optional(),
+  // RDS (via SSM parameters - will be resolved at runtime)
+  DB_HOST_PE_PARAM: z.string().default('/appointments/db/pe/host'),
+  DB_HOST_CL_PARAM: z.string().default('/appointments/db/cl/host'),
+  DB_SECRET_ARN: z.string().optional(),
 
-    // Application
-    NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-    LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+  // Application
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
+  LOG_LEVEL: z
+    .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
+    .default('info'),
 
-    // Serverless Stage
-    STAGE: z.string().default('dev'),
+  // Serverless Stage
+  STAGE: z.string().default('dev'),
 });
 
 /**

@@ -1,6 +1,6 @@
 /**
  * Messaging infrastructure exports
- * 
+ *
  * Barrel file for messaging-related infrastructure components.
  * Includes SNS publishers, EventBridge publishers, and message mappers.
  */

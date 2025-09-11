@@ -2,19 +2,19 @@ import { Appointment } from '../../../domain/entities/Appointment.js';
 
 /**
  * DynamoDB item structure for appointments table.
- * 
+ *
  * Represents the data structure stored in DynamoDB.
  * PK = insuredId, SK = appointmentId for efficient queries.
  */
 export interface DynamoDBAppointmentItem {
-  PK: string;           // insuredId (5 digits)
-  SK: string;           // appointmentId (ULID)
+  PK: string; // insuredId (5 digits)
+  SK: string; // appointmentId (ULID)
   appointmentId: string; // Duplicate for GSI
-  scheduleId: number;   // ID del slot
-  countryISO: string;   // "PE" | "CL"
-  status: string;       // "pending" | "completed" | "failed"
-  createdAt: string;    // ISO timestamp
-  updatedAt: string;    // ISO timestamp
+  scheduleId: number; // ID del slot
+  countryISO: string; // "PE" | "CL"
+  status: string; // "pending" | "completed" | "failed"
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
   // Optional slot fields
   centerId?: number;
   specialtyId?: number;
@@ -24,15 +24,14 @@ export interface DynamoDBAppointmentItem {
 
 /**
  * Mapper class for converting between Appointment entities and DynamoDB items.
- * 
+ *
  * Provides bidirectional transformation between domain entities and persistence layer.
  * Handles the mapping of Clean Architecture entities to DynamoDB-specific format.
  */
 export class AppointmentMapper {
-
   /**
    * Converts an Appointment entity to a DynamoDB item.
-   * 
+   *
    * @param appointment - The domain entity to convert
    * @returns DynamoDB item ready for persistence
    */
@@ -56,7 +55,7 @@ export class AppointmentMapper {
 
   /**
    * Converts a DynamoDB item to an Appointment entity.
-   * 
+   *
    * @param item - The DynamoDB item to convert
    * @returns Domain entity
    * @throws {Error} When required fields are missing
@@ -86,7 +85,7 @@ export class AppointmentMapper {
 
   /**
    * Converts an array of DynamoDB items to Appointment entities.
-   * 
+   *
    * @param items - Array of DynamoDB items
    * @returns Array of domain entities
    */
@@ -96,7 +95,7 @@ export class AppointmentMapper {
 
   /**
    * Validates that a DynamoDB item has all required fields.
-   * 
+   *
    * @param item - The item to validate
    * @returns True if valid, false otherwise
    */
@@ -112,7 +111,8 @@ export class AppointmentMapper {
       typeof (item as DynamoDBAppointmentItem).SK === 'string' &&
       typeof (item as DynamoDBAppointmentItem).scheduleId === 'number' &&
       typeof (item as DynamoDBAppointmentItem).countryISO === 'string' &&
-      ((item as DynamoDBAppointmentItem).countryISO === 'PE' || (item as DynamoDBAppointmentItem).countryISO === 'CL')
+      ((item as DynamoDBAppointmentItem).countryISO === 'PE' ||
+        (item as DynamoDBAppointmentItem).countryISO === 'CL')
     );
   }
 }

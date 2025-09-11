@@ -9,29 +9,29 @@ import type { CountryISO } from '../entities/Appointment.js';
  * Appointment confirmed event data
  */
 export interface AppointmentConfirmedData {
-    appointmentId: string;
-    insuredId: string;
-    scheduleId: number;
-    countryISO: CountryISO;
-    processedAt: string; // ISO timestamp
-    source: string; // Lambda function that processed it
+  appointmentId: string;
+  insuredId: string;
+  scheduleId: number;
+  countryISO: CountryISO;
+  processedAt: string; // ISO timestamp
+  source: string; // Lambda function that processed it
 }
 
 /**
  * EventBridge event structure for appointment confirmation
  */
 export interface AppointmentConfirmedEvent {
-    source: 'rimac.appointment';
-    'detail-type': 'AppointmentConfirmed';
-    detail: AppointmentConfirmedData;
+  source: 'rimac.appointment';
+  'detail-type': 'AppointmentConfirmed';
+  detail: AppointmentConfirmedData;
 }
 
 /**
  * Create an AppointmentConfirmed event
- * 
+ *
  * @param data - Event data
  * @returns EventBridge compatible event
- * 
+ *
  * @example
  * ```typescript
  * const event = createAppointmentConfirmedEvent({
@@ -44,68 +44,69 @@ export interface AppointmentConfirmedEvent {
  * ```
  */
 export const createAppointmentConfirmedEvent = (data: {
-    appointmentId: string;
-    insuredId: string;
-    scheduleId: number;
-    countryISO: CountryISO;
-    source: string;
+  appointmentId: string;
+  insuredId: string;
+  scheduleId: number;
+  countryISO: CountryISO;
+  source: string;
 }): AppointmentConfirmedEvent => {
-    return {
-        source: 'rimac.appointment',
-        'detail-type': 'AppointmentConfirmed',
-        detail: {
-            appointmentId: data.appointmentId,
-            insuredId: data.insuredId,
-            scheduleId: data.scheduleId,
-            countryISO: data.countryISO,
-            processedAt: new Date().toISOString(),
-            source: data.source,
-        },
-    };
+  return {
+    source: 'rimac.appointment',
+    'detail-type': 'AppointmentConfirmed',
+    detail: {
+      appointmentId: data.appointmentId,
+      insuredId: data.insuredId,
+      scheduleId: data.scheduleId,
+      countryISO: data.countryISO,
+      processedAt: new Date().toISOString(),
+      source: data.source,
+    },
+  };
 };
 
 /**
  * Type guard to check if an event is AppointmentConfirmed
- * 
+ *
  * @param event - Event to check
  * @returns True if event is AppointmentConfirmed
  */
 export const isAppointmentConfirmedEvent = (
-    event: unknown
+  event: unknown
 ): event is AppointmentConfirmedEvent => {
-    return (
-        typeof event === 'object' &&
-        event !== null &&
-        'source' in event &&
-        'detail-type' in event &&
-        'detail' in event &&
-        (event as AppointmentConfirmedEvent).source === 'rimac.appointment' &&
-        (event as AppointmentConfirmedEvent)['detail-type'] === 'AppointmentConfirmed'
-    );
+  return (
+    typeof event === 'object' &&
+    event !== null &&
+    'source' in event &&
+    'detail-type' in event &&
+    'detail' in event &&
+    (event as AppointmentConfirmedEvent).source === 'rimac.appointment' &&
+    (event as AppointmentConfirmedEvent)['detail-type'] ===
+      'AppointmentConfirmed'
+  );
 };
 
 /**
  * Validate AppointmentConfirmed event data
- * 
+ *
  * @param data - Event data to validate
  * @throws ValidationError if data is invalid
  */
 export const validateAppointmentConfirmedData = (
-    data: unknown
+  data: unknown
 ): data is AppointmentConfirmedData => {
-    if (typeof data !== 'object' || data === null) {
-        return false;
-    }
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
 
-    const eventData = data as Record<string, unknown>;
+  const eventData = data as Record<string, unknown>;
 
-    return (
-        typeof eventData.appointmentId === 'string' &&
-        typeof eventData.insuredId === 'string' &&
-        typeof eventData.scheduleId === 'number' &&
-        typeof eventData.countryISO === 'string' &&
-        ['PE', 'CL'].includes(eventData.countryISO) &&
-        typeof eventData.processedAt === 'string' &&
-        typeof eventData.source === 'string'
-    );
+  return (
+    typeof eventData.appointmentId === 'string' &&
+    typeof eventData.insuredId === 'string' &&
+    typeof eventData.scheduleId === 'number' &&
+    typeof eventData.countryISO === 'string' &&
+    ['PE', 'CL'].includes(eventData.countryISO) &&
+    typeof eventData.processedAt === 'string' &&
+    typeof eventData.source === 'string'
+  );
 };

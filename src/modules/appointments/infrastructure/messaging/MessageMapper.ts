@@ -17,15 +17,14 @@ export interface SNSMessage {
 
 /**
  * Message mapper for converting domain events to SNS message format.
- * 
+ *
  * Handles the transformation of domain events into SNS-compatible messages
  * with proper message attributes for filtering by country.
  */
 export class MessageMapper {
-
   /**
    * Converts an AppointmentConfirmed event to SNS message format.
-   * 
+   *
    * @param event - The appointment confirmed event
    * @returns SNS message with country filtering attributes
    */
@@ -59,7 +58,7 @@ export class MessageMapper {
   /**
    * Converts generic event data to SNS message format.
    * Used for appointment creation events from the CreateAppointment use case.
-   * 
+   *
    * @param eventData - Generic event data
    * @param countryISO - Country code for filtering
    * @returns SNS message with country filtering attributes
@@ -100,11 +99,13 @@ export class MessageMapper {
 
   /**
    * Validates that message attributes contain required country filtering data.
-   * 
+   *
    * @param messageAttributes - SNS message attributes to validate
    * @returns True if valid for country filtering
    */
-  validateCountryFilterAttributes(messageAttributes: SNSMessage['messageAttributes']): boolean {
+  validateCountryFilterAttributes(
+    messageAttributes: SNSMessage['messageAttributes']
+  ): boolean {
     const countryAttr = messageAttributes.countryISO;
 
     return !!(
@@ -117,7 +118,7 @@ export class MessageMapper {
 
   /**
    * Creates a test message for health checks or debugging.
-   * 
+   *
    * @param countryISO - Country to test filtering for
    * @returns Test SNS message
    */

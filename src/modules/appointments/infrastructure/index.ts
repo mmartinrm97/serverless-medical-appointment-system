@@ -1,6 +1,6 @@
 /**
  * Infrastructure layer exports
- * 
+ *
  * Main barrel file for all infrastructure components.
  * Centralizes all infrastructure implementations for easy import.
  */

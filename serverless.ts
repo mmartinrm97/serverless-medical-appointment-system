@@ -142,12 +142,12 @@ const serverlessConfiguration: AWS = {
 
             // DynamoDB
             APPOINTMENTS_TABLE: "${self:service}-appointments-${self:provider.stage}",
-            // SNS
-            SNS_TOPIC_ARN: { Ref: "AppointmentNotificationsTopic" },
-            // SQS
-            SQS_PE_URL: { Ref: "AppointmentPeQueue" },
-            SQS_CL_URL: { Ref: "AppointmentClQueue" },
-            SQS_COMPLETION_URL: { Ref: "AppointmentCompletionQueue" },
+            // SNS - Use direct ARN for local development
+            SNS_TOPIC_ARN: "${param:SNS_TOPIC_ARN, 'arn:aws:sns:us-east-1:000000000000:medical-appointments-api-appointment-notifications-dev'}",
+            // SQS - Use direct URLs for local development  
+            SQS_PE_URL: "${param:SQS_PE_URL, 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/medical-appointments-api-appointment-pe-dev'}",
+            SQS_CL_URL: "${param:SQS_CL_URL, 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/medical-appointments-api-appointment-cl-dev'}",
+            SQS_COMPLETION_URL: "${param:SQS_COMPLETION_URL, 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/medical-appointments-api-appointment-completion-dev'}",
             // EventBridge
             EVENT_BUS_NAME: "${param:EVENT_BUS_NAME}",
 

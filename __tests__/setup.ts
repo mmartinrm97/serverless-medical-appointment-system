@@ -8,39 +8,47 @@ vi.mock('@aws-sdk/client-dynamodb', () => ({
   })),
 }));
 
-vi.mock('@aws-sdk/lib-dynamodb', () => ({
-  DynamoDBDocumentClient: {
+vi.mock('@aws-sdk/lib-dynamodb', () => {
+  const mockSend = vi.fn();
+  const MockDynamoDBDocumentClient = {
     from: vi.fn(() => ({
-      send: vi.fn(),
+      send: mockSend,
     })),
-  },
-  PutCommand: vi.fn(),
-  GetCommand: vi.fn(),
-  QueryCommand: vi.fn(),
-  UpdateCommand: vi.fn(),
-}));
+  };
 
-vi.mock('@aws-sdk/client-sns', () => ({
-  SNSClient: vi.fn(() => ({
-    send: vi.fn(),
-  })),
-  PublishCommand: vi.fn(),
-}));
+  return {
+    DynamoDBDocumentClient: MockDynamoDBDocumentClient,
+    PutCommand: vi.fn(),
+    GetCommand: vi.fn(),
+    QueryCommand: vi.fn(),
+    UpdateCommand: vi.fn(),
+  };
+});
 
-vi.mock('@aws-sdk/client-sqs', () => ({
-  SQSClient: vi.fn(() => ({
-    send: vi.fn(),
-  })),
-  SendMessageCommand: vi.fn(),
-  ReceiveMessageCommand: vi.fn(),
-}));
+vi.mock('@aws-sdk/client-sns', () => {
+  const mockSend = vi.fn();
+  const MockSNSClient = vi.fn(() => ({
+    send: mockSend,
+  }));
 
-vi.mock('@aws-sdk/client-eventbridge', () => ({
-  EventBridgeClient: vi.fn(() => ({
-    send: vi.fn(),
-  })),
-  PutEventsCommand: vi.fn(),
-}));
+  return {
+    SNSClient: MockSNSClient,
+    PublishCommand: vi.fn(),
+    GetTopicAttributesCommand: vi.fn(),
+  };
+});
+
+vi.mock('@aws-sdk/client-eventbridge', () => {
+  const mockSend = vi.fn();
+  const MockEventBridgeClient = vi.fn(() => ({
+    send: mockSend,
+  }));
+
+  return {
+    EventBridgeClient: MockEventBridgeClient,
+    PutEventsCommand: vi.fn(),
+  };
+});
 
 // Mock MySQL2
 vi.mock('mysql2/promise', () => ({
@@ -67,7 +75,7 @@ global.console = {
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.AWS_REGION = 'us-east-1';
-process.env.APPOINTMENTS_TABLE = 'test-appointments-table';
+process.env.APPOINTMENTS_TABLE = 'appointments';
 process.env.SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:123456789012:test-topic';
 process.env.SQS_PE_URL =
   'https://sqs.us-east-1.amazonaws.com/123456789012/test-pe-queue';

@@ -4,23 +4,32 @@ import { createAppointmentConfirmedEvent } from '@/modules/appointments/domain/e
 import type { CountryISO } from '@/modules/appointments/domain/entities/Appointment.js';
 import {
     mockEventBridgePutEventsResponse,
-    mockSNSError
+    mockSNSError,
 } from '@tests/fixtures/mockResponses.js';
 
 // Import AWS SDK modules to access mocked implementations
-import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
+import {
+    EventBridgeClient,
+    PutEventsCommand,
+} from '@aws-sdk/client-eventbridge';
 
 describe('EventBridgePublisher', () => {
     let publisher: EventBridgePublisher;
-    let mockEventBridgeClient: any;
+    let mockSend: any;
     const region = 'us-east-1';
     const eventBusName = 'test-event-bus';
 
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // Setup mock implementations
+        mockSend = vi.fn();
+        const MockEventBridgeClient = EventBridgeClient as any;
+        MockEventBridgeClient.mockImplementation(() => ({
+            send: mockSend,
+        }));
+
         publisher = new EventBridgePublisher(region, eventBusName);
-        // Get the mocked EventBridge client instance
-        mockEventBridgeClient = (EventBridgeClient as any).mock.results[0].value;
     });
 
     describe('Constructor', () => {
@@ -38,21 +47,21 @@ describe('EventBridgePublisher', () => {
     describe('publishAppointmentConfirmed()', () => {
         it('should publish AppointmentConfirmed event successfully for PE', async () => {
             // Arrange
-            mockEventBridgeClient.send.mockResolvedValue(mockEventBridgePutEventsResponse);
+            mockSend.mockResolvedValue(mockEventBridgePutEventsResponse);
 
             const appointmentConfirmedEvent = createAppointmentConfirmedEvent({
                 appointmentId: '01234567890123456789012345',
                 insuredId: '12345',
                 scheduleId: 100,
                 countryISO: 'PE' as CountryISO,
-                source: 'appointment_pe'
+                source: 'appointment_pe',
             });
 
             // Act
             await publisher.publishAppointmentConfirmed(appointmentConfirmedEvent);
 
             // Assert
-            expect(mockEventBridgeClient.send).toHaveBeenCalledTimes(1);
+            expect(mockSend).toHaveBeenCalledTimes(1);
             expect(PutEventsCommand).toHaveBeenCalledWith({
                 Entries: [
                     {
@@ -60,29 +69,29 @@ describe('EventBridgePublisher', () => {
                         DetailType: 'AppointmentConfirmed',
                         Detail: JSON.stringify(appointmentConfirmedEvent.detail),
                         EventBusName: eventBusName,
-                        Time: expect.any(Date)
-                    }
-                ]
+                        Time: expect.any(Date),
+                    },
+                ],
             });
         });
 
         it('should publish AppointmentConfirmed event successfully for CL', async () => {
             // Arrange
-            mockEventBridgeClient.send.mockResolvedValue(mockEventBridgePutEventsResponse);
+            mockSend.mockResolvedValue(mockEventBridgePutEventsResponse);
 
             const chileEvent = createAppointmentConfirmedEvent({
                 appointmentId: '01234567890123456789012345',
                 insuredId: '67890',
                 scheduleId: 200,
                 countryISO: 'CL' as CountryISO,
-                source: 'appointment_cl'
+                source: 'appointment_cl',
             });
 
             // Act
             await publisher.publishAppointmentConfirmed(chileEvent);
 
             // Assert
-            expect(mockEventBridgeClient.send).toHaveBeenCalledTimes(1);
+            expect(mockSend).toHaveBeenCalledTimes(1);
             expect(PutEventsCommand).toHaveBeenCalledWith({
                 Entries: [
                     {
@@ -90,26 +99,28 @@ describe('EventBridgePublisher', () => {
                         DetailType: 'AppointmentConfirmed',
                         Detail: JSON.stringify(chileEvent.detail),
                         EventBusName: eventBusName,
-                        Time: expect.any(Date)
-                    }
-                ]
+                        Time: expect.any(Date),
+                    },
+                ],
             });
         });
 
         it('should handle EventBridge publish errors', async () => {
             // Arrange
-            mockEventBridgeClient.send.mockRejectedValue(mockSNSError);
+            mockSend.mockRejectedValue(mockSNSError);
 
             const appointmentConfirmedEvent = createAppointmentConfirmedEvent({
                 appointmentId: '01234567890123456789012345',
                 insuredId: '12345',
                 scheduleId: 100,
                 countryISO: 'PE' as CountryISO,
-                source: 'appointment_pe'
+                source: 'appointment_pe',
             });
 
             // Act & Assert
-            await expect(publisher.publishAppointmentConfirmed(appointmentConfirmedEvent)).rejects.toThrow();
+            await expect(
+                publisher.publishAppointmentConfirmed(appointmentConfirmedEvent)
+            ).rejects.toThrow();
         });
 
         it('should handle failed entries in EventBridge response', async () => {
@@ -119,29 +130,31 @@ describe('EventBridgePublisher', () => {
                 Entries: [
                     {
                         ErrorCode: 'ValidationException',
-                        ErrorMessage: 'Event size exceeded limit'
-                    }
-                ]
+                        ErrorMessage: 'Event size exceeded limit',
+                    },
+                ],
             };
-            mockEventBridgeClient.send.mockResolvedValue(failedResponse);
+            mockSend.mockResolvedValue(failedResponse);
 
             const appointmentConfirmedEvent = createAppointmentConfirmedEvent({
                 appointmentId: '01234567890123456789012345',
                 insuredId: '12345',
                 scheduleId: 100,
                 countryISO: 'PE' as CountryISO,
-                source: 'appointment_pe'
+                source: 'appointment_pe',
             });
 
             // Act & Assert
-            await expect(publisher.publishAppointmentConfirmed(appointmentConfirmedEvent)).rejects.toThrow();
+            await expect(
+                publisher.publishAppointmentConfirmed(appointmentConfirmedEvent)
+            ).rejects.toThrow();
         });
     });
 
     describe('publishEvent()', () => {
         it('should publish generic event successfully', async () => {
             // Arrange
-            mockEventBridgeClient.send.mockResolvedValue(mockEventBridgePutEventsResponse);
+            mockSend.mockResolvedValue(mockEventBridgePutEventsResponse);
 
             const eventData = {
                 source: 'appointments.api',
@@ -150,15 +163,15 @@ describe('EventBridgePublisher', () => {
                     appointmentId: '01234567890123456789012345',
                     insuredId: '12345',
                     scheduleId: 100,
-                    countryISO: 'PE'
-                }
+                    countryISO: 'PE',
+                },
             };
 
             // Act
             await publisher.publishEvent(eventData);
 
             // Assert
-            expect(mockEventBridgeClient.send).toHaveBeenCalledTimes(1);
+            expect(mockSend).toHaveBeenCalledTimes(1);
             expect(PutEventsCommand).toHaveBeenCalledWith({
                 Entries: [
                     {
@@ -166,23 +179,23 @@ describe('EventBridgePublisher', () => {
                         DetailType: 'AppointmentCreated',
                         Detail: JSON.stringify(eventData.detail),
                         EventBusName: eventBusName,
-                        Time: expect.any(Date)
-                    }
-                ]
+                        Time: expect.any(Date),
+                    },
+                ],
             });
         });
 
         it('should handle EventBridge publish errors for generic events', async () => {
             // Arrange
-            mockEventBridgeClient.send.mockRejectedValue(mockSNSError);
+            mockSend.mockRejectedValue(mockSNSError);
 
             const eventData = {
                 source: 'appointments.api',
                 detailType: 'AppointmentCreated',
                 detail: {
                     appointmentId: '01234567890123456789012345',
-                    countryISO: 'PE'
-                }
+                    countryISO: 'PE',
+                },
             };
 
             // Act & Assert
@@ -196,19 +209,19 @@ describe('EventBridgePublisher', () => {
                 Entries: [
                     {
                         ErrorCode: 'ThrottlingException',
-                        ErrorMessage: 'Rate exceeded'
-                    }
-                ]
+                        ErrorMessage: 'Rate exceeded',
+                    },
+                ],
             };
-            mockEventBridgeClient.send.mockResolvedValue(failedResponse);
+            mockSend.mockResolvedValue(failedResponse);
 
             const eventData = {
                 source: 'appointments.api',
                 detailType: 'AppointmentCreated',
                 detail: {
                     appointmentId: '01234567890123456789012345',
-                    countryISO: 'PE'
-                }
+                    countryISO: 'PE',
+                },
             };
 
             // Act & Assert
@@ -217,7 +230,7 @@ describe('EventBridgePublisher', () => {
 
         it('should include correct event structure', async () => {
             // Arrange
-            mockEventBridgeClient.send.mockResolvedValue(mockEventBridgePutEventsResponse);
+            mockSend.mockResolvedValue(mockEventBridgePutEventsResponse);
 
             const eventData = {
                 source: 'custom.service',
@@ -227,9 +240,9 @@ describe('EventBridgePublisher', () => {
                     status: 'active',
                     metadata: {
                         version: '1.0',
-                        timestamp: '2024-01-10T08:00:00Z'
-                    }
-                }
+                        timestamp: '2024-01-10T08:00:00Z',
+                    },
+                },
             };
 
             // Act
@@ -254,15 +267,15 @@ describe('EventBridgePublisher', () => {
         it('should wrap EventBridge errors in InfrastructureError', async () => {
             // Arrange
             const customError = new Error('EventBridge service unavailable');
-            mockEventBridgeClient.send.mockRejectedValue(customError);
+            mockSend.mockRejectedValue(customError);
 
             const eventData = {
                 source: 'appointments.api',
                 detailType: 'AppointmentCreated',
                 detail: {
                     appointmentId: '01234567890123456789012345',
-                    countryISO: 'PE'
-                }
+                    countryISO: 'PE',
+                },
             };
 
             // Act & Assert
@@ -276,22 +289,24 @@ describe('EventBridgePublisher', () => {
                 Entries: [
                     {
                         ErrorCode: 'AccessDenied',
-                        ErrorMessage: 'Insufficient permissions'
-                    }
-                ]
+                        ErrorMessage: 'Insufficient permissions',
+                    },
+                ],
             };
-            mockEventBridgeClient.send.mockResolvedValue(failedResponse);
+            mockSend.mockResolvedValue(failedResponse);
 
             const appointmentConfirmedEvent = createAppointmentConfirmedEvent({
                 appointmentId: '01234567890123456789012345',
                 insuredId: '12345',
                 scheduleId: 100,
                 countryISO: 'PE' as CountryISO,
-                source: 'appointment_pe'
+                source: 'appointment_pe',
             });
 
             // Act & Assert
-            await expect(publisher.publishAppointmentConfirmed(appointmentConfirmedEvent)).rejects.toThrow();
+            await expect(
+                publisher.publishAppointmentConfirmed(appointmentConfirmedEvent)
+            ).rejects.toThrow();
         });
     });
 });

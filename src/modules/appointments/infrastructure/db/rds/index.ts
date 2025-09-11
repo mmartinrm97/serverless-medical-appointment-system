@@ -1,6 +1,6 @@
 /**
  * RDS infrastructure exports
- * 
+ *
  * Barrel file for RDS-related infrastructure components.
  * Includes MySQL client, connection management, and country-specific writers.
  */
