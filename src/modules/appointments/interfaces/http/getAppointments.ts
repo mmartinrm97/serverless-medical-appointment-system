@@ -40,7 +40,10 @@ export const handler: APIGatewayProxyHandler = async (
         logger.info('Request parameters validated successfully');
 
         // Initialize dependencies
-        const appointmentsRepository = new DynamoDBAppointmentsRepository();
+        const appointmentsRepository = new DynamoDBAppointmentsRepository(
+            process.env.AWS_REGION ?? 'us-east-1',
+            process.env.APPOINTMENTS_TABLE ?? 'appointments'
+        );
 
         // Initialize use case
         const listAppointmentsUseCase = new ListAppointmentsByInsured(appointmentsRepository);

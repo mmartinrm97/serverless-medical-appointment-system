@@ -81,8 +81,11 @@ async function setupLocalStack() {
 async function createDynamoDBTable() {
     console.log('📋 Creating DynamoDB table...');
     
+    // Use the correct table name that matches serverless.ts configuration
+    const tableName = 'medical-appointments-api-appointments-dev';
+    
     try {
-        await dynamodb.send(new DescribeTableCommand({ TableName: 'appointments-dev' }));
+        await dynamodb.send(new DescribeTableCommand({ TableName: tableName }));
         console.log('   ✅ DynamoDB table already exists');
         return;
     } catch {
@@ -90,7 +93,7 @@ async function createDynamoDBTable() {
     }
 
     const command = new CreateTableCommand({
-        TableName: 'appointments-dev',
+        TableName: tableName,
         KeySchema: [
             { AttributeName: 'PK', KeyType: 'HASH' },
             { AttributeName: 'SK', KeyType: 'RANGE' }
@@ -99,20 +102,24 @@ async function createDynamoDBTable() {
             { AttributeName: 'PK', AttributeType: 'S' },
             { AttributeName: 'SK', AttributeType: 'S' }
         ],
-        BillingMode: 'PAY_PER_REQUEST'
+        BillingMode: 'PAY_PER_REQUEST',
+        StreamSpecification: {
+            StreamEnabled: true,
+            StreamViewType: 'NEW_AND_OLD_IMAGES'
+        }
     });
 
     await dynamodb.send(command);
-    console.log('   ✅ DynamoDB table created');
+    console.log(`   ✅ DynamoDB table ${tableName} created`);
 }
 
 async function createSQSQueues() {
     console.log('📬 Creating SQS queues...');
     
     const queues = {
-        peQueue: 'appointment-pe-queue-dev',
-        clQueue: 'appointment-cl-queue-dev',
-        completionQueue: 'appointment-completion-queue-dev'
+        peQueue: 'medical-appointments-api-appointment-pe-dev',
+        clQueue: 'medical-appointments-api-appointment-cl-dev',
+        completionQueue: 'medical-appointments-api-appointment-completion-dev'
     };
 
     const queueData = {};
@@ -157,7 +164,7 @@ async function createSNSResources(queues) {
     
     // Create topic
     const topicCommand = new CreateTopicCommand({
-        Name: 'appointment-notifications-dev'
+        Name: 'medical-appointments-api-appointment-notifications-dev'
     });
     const topicResponse = await sns.send(topicCommand);
     const topicArn = topicResponse.TopicArn;
@@ -191,7 +198,7 @@ async function createEventBridgeResources(completionQueueArn) {
     
     // Create rule
     const ruleCommand = new PutRuleCommand({
-        Name: 'appointment-completion-rule-dev',
+        Name: 'medical-appointments-api-appointment-confirmed-dev',
         EventPattern: JSON.stringify({
             source: ['rimac.appointment'],
             'detail-type': ['AppointmentConfirmed']
@@ -203,7 +210,7 @@ async function createEventBridgeResources(completionQueueArn) {
 
     // Add target using ARN
     const targetsCommand = new PutTargetsCommand({
-        Rule: 'appointment-completion-rule-dev',
+        Rule: 'medical-appointments-api-appointment-confirmed-dev',
         Targets: [{
             Id: '1',
             Arn: completionQueueArn,

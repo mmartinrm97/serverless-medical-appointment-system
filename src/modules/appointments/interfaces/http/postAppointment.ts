@@ -36,7 +36,10 @@ export const handler: APIGatewayProxyHandler = async (
         logger.info('Request validated successfully');
 
         // Initialize dependencies
-        const appointmentsRepository = new DynamoDBAppointmentsRepository();
+        const appointmentsRepository = new DynamoDBAppointmentsRepository(
+            process.env.AWS_REGION ?? 'us-east-1',
+            process.env.APPOINTMENTS_TABLE ?? 'appointments'
+        );
         const messagePublisher = new SNSMessagePublisher(
             process.env.SNS_TOPIC_ARN ?? '',
             process.env.AWS_REGION ?? 'us-east-1'
