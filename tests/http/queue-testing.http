@@ -1,0 +1,88 @@
+###
+# Medical Appointments API - Queue Testing
+# These tests help verify the complete appointment flow including SQS processing
+###
+
+### 1. Create appointment for Peru - Should trigger SQS queue processing
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "PE001",
+  "countryISO": "PE",
+  "appointmentDate": "2024-12-20T08:00:00Z",
+  "doctorName": "Dr. Ana Lima",
+  "specialty": "Cardiology",
+  "notes": "Patient has history of hypertension"
+}
+
+### 2. Create appointment for Chile - Should trigger SQS queue processing
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "CL001", 
+  "countryISO": "CL",
+  "appointmentDate": "2024-12-20T10:30:00Z",
+  "doctorName": "Dr. Carlos Mendoza",
+  "specialty": "Orthopedics",
+  "notes": "Follow-up after knee surgery"
+}
+
+### 3. Create multiple appointments for Peru (batch testing)
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "PE002",
+  "countryISO": "PE",
+  "appointmentDate": "2024-12-21T09:00:00Z",
+  "doctorName": "Dr. Luis Rodriguez",
+  "specialty": "Neurology",
+  "notes": "Headache evaluation"
+}
+
+### 4. Create another appointment for the same insured (test multiple appointments)
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "PE002",
+  "countryISO": "PE",
+  "appointmentDate": "2024-12-22T15:00:00Z",
+  "doctorName": "Dr. Sandra Vega",
+  "specialty": "Ophthalmology",
+  "notes": "Vision test"
+}
+
+### 5. Create appointment for Chile with special characters
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "CL002",
+  "countryISO": "CL",
+  "appointmentDate": "2024-12-23T11:00:00Z",
+  "doctorName": "Dr. José Fernández",
+  "specialty": "Endocrinología",
+  "notes": "Control de diabetes - ñandú"
+}
+
+### 6. Check appointments for PE002 (should have 2 appointments)
+GET http://localhost:3000/dev/appointments/PE002
+
+### 7. Check appointments for CL002 (should have 1 appointment)
+GET http://localhost:3000/dev/appointments/CL002
+
+### 8. Edge case: Create appointment for future date (6 months ahead)
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "FUTURE001",
+  "countryISO": "PE",
+  "appointmentDate": "2025-06-15T14:00:00Z",
+  "doctorName": "Dr. Future Test",
+  "specialty": "Preventive Medicine",
+  "notes": "Scheduled preventive checkup"
+}

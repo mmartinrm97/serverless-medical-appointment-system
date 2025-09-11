@@ -4,8 +4,35 @@ const serverlessConfiguration: AWS = {
     service: "medical-appointments-api",
     frameworkVersion: "4",
     useDotenv: true,
-
+    build: {
+        esbuild: {
+            bundle: true,
+            minify: false,
+            sourcemap: {
+                type: "linked",
+                setNodeOptions: true
+            },
+            external: [
+                // AWS SDK v3 packages - externalize to avoid bundling issues
+                '@aws-sdk/client-dynamodb',
+                '@aws-sdk/client-sns',
+                '@aws-sdk/client-sqs',
+                '@aws-sdk/client-eventbridge',
+                '@aws-sdk/client-secrets-manager',
+                '@aws-sdk/client-ssm',
+                // Database drivers that should remain external
+                'mysql2',
+                'mysql2/promise',
+                // Logging libraries - externalize to avoid ESM/CommonJS conflicts
+                'pino',
+                'pino-pretty',
+                // Other packages that might cause bundling issues
+                'aws-lambda'
+            ],
+        }
+    },
     plugins: [
+
         "serverless-offline",
         "serverless-localstack",
     ],
@@ -98,7 +125,7 @@ const serverlessConfiguration: AWS = {
     provider: {
         name: "aws",
         runtime: "nodejs22.x",
-        region: "${param:REGION}" as any,
+        region: "${param:REGION}" as AWS["provider"]["region"],
         stage: "${param:STAGE}",
 
         // Global defaults for all Lambdas

@@ -1,0 +1,83 @@
+###
+# Medical Appointments API - HTTP Tests
+# Server: http://localhost:3000 (serverless offline)
+###
+
+### 1. Create a new appointment for Peru (PE)
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "12345678",
+  "countryISO": "PE",
+  "appointmentDate": "2024-12-15T10:00:00Z",
+  "doctorName": "Dr. Juan Pérez",
+  "specialty": "Cardiology",
+  "notes": "Routine checkup"
+}
+
+### 2. Create a new appointment for Chile (CL)
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "87654321",
+  "countryISO": "CL",
+  "appointmentDate": "2024-12-16T14:30:00Z",
+  "doctorName": "Dr. María González",
+  "specialty": "Dermatology",
+  "notes": "Skin examination"
+}
+
+### 3. Get appointments for a specific insured (Peru)
+GET http://localhost:3000/dev/appointments/12345678
+
+### 4. Get appointments for a specific insured (Chile)
+GET http://localhost:3000/dev/appointments/87654321
+
+### 5. Test error handling - invalid country
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "99999999",
+  "countryISO": "INVALID",
+  "appointmentDate": "2024-12-17T09:00:00Z",
+  "doctorName": "Dr. Test",
+  "specialty": "General",
+  "notes": "Test appointment"
+}
+
+### 6. Test error handling - missing required fields
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "11111111",
+  "countryISO": "PE"
+}
+
+### 7. Test error handling - invalid date format
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "22222222",
+  "countryISO": "CL",
+  "appointmentDate": "invalid-date",
+  "doctorName": "Dr. Test",
+  "specialty": "General",
+  "notes": "Test appointment"
+}
+
+### 8. Create appointment with minimum required fields
+POST http://localhost:3000/dev/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "33333333",
+  "countryISO": "PE",
+  "appointmentDate": "2024-12-18T16:00:00Z",
+  "doctorName": "Dr. Minimal",
+  "specialty": "General"
+}

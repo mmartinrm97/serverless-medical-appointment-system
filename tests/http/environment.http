@@ -1,0 +1,69 @@
+###
+# Medical Appointments API - Environment Configuration
+# This file contains environment variables and common configurations for HTTP testing
+###
+
+@baseUrl = http://localhost:3000
+@stage = dev
+@apiUrl = {{baseUrl}}/{{stage}}
+
+# Common test data
+@testInsuredPE = TEST-PE-001
+@testInsuredCL = TEST-CL-001
+@testDate = 2024-12-30T14:00:00Z
+
+###
+# Quick Health Check
+GET {{apiUrl}}/appointments/healthcheck
+
+###
+# Development Environment Tests
+# Use these for local development with serverless offline
+###
+
+### Create test appointment - Peru
+POST {{apiUrl}}/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "{{testInsuredPE}}",
+  "countryISO": "PE",
+  "appointmentDate": "{{testDate}}",
+  "doctorName": "Dr. Environment Test PE",
+  "specialty": "Testing",
+  "notes": "Environment variable test for Peru"
+}
+
+### Create test appointment - Chile
+POST {{apiUrl}}/appointments
+Content-Type: application/json
+
+{
+  "insuredId": "{{testInsuredCL}}",
+  "countryISO": "CL",
+  "appointmentDate": "{{testDate}}",
+  "doctorName": "Dr. Environment Test CL",
+  "specialty": "Testing",
+  "notes": "Environment variable test for Chile"
+}
+
+### Get appointments for Peru test user
+GET {{apiUrl}}/appointments/{{testInsuredPE}}
+
+### Get appointments for Chile test user
+GET {{apiUrl}}/appointments/{{testInsuredCL}}
+
+###
+# Production-like Environment Variables
+# Uncomment and modify these lines for staging/production testing
+###
+
+# @baseUrl = https://your-api-gateway-url.amazonaws.com
+# @stage = prod
+# @apiUrl = {{baseUrl}}/{{stage}}
+
+### 
+# Authentication Headers (if needed in production)
+# Authorization: Bearer {{authToken}}
+# x-api-key: {{apiKey}}
+###
