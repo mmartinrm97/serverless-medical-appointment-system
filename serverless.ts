@@ -879,6 +879,10 @@ const serverlessConfiguration: AWS = {
         },
         "serverless-offline": {
             httpPort: 3000,
+            cors: true,
+            corsAllowOrigin: '*',
+            corsAllowHeaders: 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token',
+            corsAllowCredentials: false,
             babelOptions: {
                 presets: ["env"]
             }
