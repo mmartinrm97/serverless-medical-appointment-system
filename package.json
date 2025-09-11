@@ -19,7 +19,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "bash scripts/clean-and-restart.sh && concurrently --kill-others --success first \"pnpm run dev\" \"sleep 15 && cross-env NODE_ENV=development vitest run --config vitest.e2e.config.ts\"",
+    "test:e2e": "bash scripts/clean-and-restart.sh && concurrently --kill-others --success first \"pnpm run dev\" \"sleep 25 && cross-env NODE_ENV=development vitest run --config vitest.e2e.config.ts\"",
     "test:e2e:dev": "concurrently --names \"API,TESTS\" \"pnpm run dev\" \"sleep 15 && cross-env NODE_ENV=development vitest --config vitest.e2e.config.ts --reporter=verbose\"",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

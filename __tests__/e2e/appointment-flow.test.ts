@@ -10,7 +10,6 @@
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { SNSClient, GetTopicAttributesCommand } from '@aws-sdk/client-sns';
 import {
   SQSClient,
   ReceiveMessageCommand,
@@ -44,12 +43,6 @@ const dynamoClient = DynamoDBDocumentClient.from(
     credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
   })
 );
-
-const snsClient = new SNSClient({
-  region: TEST_CONFIG.region,
-  endpoint: TEST_CONFIG.localStackEndpoint,
-  credentials: { accessKeyId: 'test', secretAccessKey: 'test' },
-});
 
 const sqsClient = new SQSClient({
   region: TEST_CONFIG.region,
@@ -133,19 +126,30 @@ async function cleanupQueues() {
 
 describe('E2E: Medical Appointments API Flow', () => {
   beforeAll(async () => {
-    // Verify LocalStack services are running
-    try {
-      await snsClient.send(
-        new GetTopicAttributesCommand({
-          TopicArn: TEST_CONFIG.snsTopicArn,
-        })
-      );
-    } catch (error) {
-      console.error('Error connecting to LocalStack SNS:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+    console.log('🔧 Setting up E2E test environment...');
+
+    // Wait for serverless offline to be ready
+    console.log('⏳ Waiting for Serverless Offline to be ready...');
+    let retries = 10;
+    let isReady = false;
+
+    while (retries > 0 && !isReady) {
+      try {
+        await fetch(`${TEST_CONFIG.baseUrl}/health`, { method: 'GET' });
+        isReady = true;
+        console.log('✅ Serverless Offline is ready!');
+      } catch {
+        console.log(
+          `⏳ Serverless Offline not ready yet, retrying... (${retries} attempts left)`
+        );
+        retries--;
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    if (!isReady) {
       throw new Error(
-        `LocalStack SNS not available. Error: ${errorMessage}. Run "pnpm run local:start" first.`
+        'Serverless Offline failed to start within expected time'
       );
     }
   });
