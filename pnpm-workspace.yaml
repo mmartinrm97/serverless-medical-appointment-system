@@ -1,4 +1,5 @@
 onlyBuiltDependencies:
   - '@parcel/watcher'
+  - aws-sdk
   - esbuild
   - serverless

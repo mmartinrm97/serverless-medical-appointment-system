@@ -3,22 +3,116 @@ import type { AWS } from "@serverless/typescript";
 const serverlessConfiguration: AWS = {
     service: "medical-appointments-api",
     frameworkVersion: "4",
+    useDotenv: true,
+
     plugins: [
-        "serverless-esbuild",
         "serverless-offline",
+        "serverless-localstack",
     ],
+
+    // ---------- Stage-aware parameters ----------
+    // dev: reads strictly from env
+    // prod/staging: SSM first, fallback to env if missing
+    params: {
+        default: {
+            STAGE: "${opt:stage, 'dev'}",
+            REGION: "${opt:region, env:AWS_DEFAULT_REGION, 'us-east-1'}",
+
+            // Production tuning via CLI: 
+            // sls deploy --stage prod --memory 512 --sqsTimeout 600 --apiThrottle 200
+            DEFAULT_MEMORY: "${opt:memory, env:DEFAULT_MEMORY, '256'}",
+            DEFAULT_TIMEOUT: "${opt:timeout, env:DEFAULT_TIMEOUT, '30'}",
+            API_COMPRESSION: "${opt:compression, env:API_COMPRESSION, '1024'}",
+
+            // SQS tuning parameters
+            SQS_VISIBILITY_TIMEOUT: "${opt:sqsTimeout, env:SQS_VISIBILITY_TIMEOUT, '360'}",
+            SQS_MAX_RECEIVE: "${opt:sqsMaxReceive, env:SQS_MAX_RECEIVE, '3'}",
+            SQS_LONG_POLLING: "${opt:sqsPolling, env:SQS_LONG_POLLING, '20'}",
+
+            // API Gateway throttling
+            API_RATE_LIMIT: "${opt:apiRate, env:API_RATE_LIMIT, '100'}",
+            API_BURST_LIMIT: "${opt:apiBurst, env:API_BURST_LIMIT, '200'}",
+
+            // Centralized event bus
+            EVENT_BUS_NAME: "${opt:eventBus, env:EVENT_BUS_NAME, 'default'}",
+
+            // Environment tags
+            OWNER: "${opt:owner, env:OWNER, 'Backend-Team'}",
+            COST_CENTER: "${opt:costCenter, env:COST_CENTER, 'Medical-Apps'}",
+        },
+
+        dev: {
+            DB_HOST_PE: "${env:DB_HOST_PE, '127.0.0.1'}",
+            DB_PORT_PE: "${env:DB_PORT_PE, '3306'}",
+            DB_NAME_PE: "${env:DB_NAME_PE, 'medical_pe'}",
+            DB_USER_PE: "${env:DB_USER_PE, 'root'}",
+            DB_PASSWORD_PE: "${env:DB_PASSWORD_PE, 'password'}",
+
+            DB_HOST_CL: "${env:DB_HOST_CL, '127.0.0.1'}",
+            DB_PORT_CL: "${env:DB_PORT_CL, '3306'}",
+            DB_NAME_CL: "${env:DB_NAME_CL, 'medical_cl'}",
+            DB_USER_CL: "${env:DB_USER_CL, 'root'}",
+            DB_PASSWORD_CL: "${env:DB_PASSWORD_CL, 'password'}",
+
+            // Optional locally (only if your code actually calls Secrets Manager)
+            DB_SECRET_ARN_PE: "${env:DB_SECRET_ARN_PE, ''}",
+            DB_SECRET_ARN_CL: "${env:DB_SECRET_ARN_CL, ''}",
+        },
+
+        staging: {
+            DB_HOST_PE: "${ssm:/medical-appointments/staging/db/host/pe, env:DB_HOST_PE}",
+            DB_PORT_PE: "${ssm:/medical-appointments/staging/db/port/pe, env:DB_PORT_PE}",
+            DB_NAME_PE: "${ssm:/medical-appointments/staging/db/name/pe, env:DB_NAME_PE}",
+            DB_USER_PE: "${ssm:/medical-appointments/staging/db/user/pe, env:DB_USER_PE}",
+            DB_PASSWORD_PE: "${ssm:/medical-appointments/staging/db/password/pe, env:DB_PASSWORD_PE}",
+
+            DB_HOST_CL: "${ssm:/medical-appointments/staging/db/host/cl, env:DB_HOST_CL}",
+            DB_PORT_CL: "${ssm:/medical-appointments/staging/db/port/cl, env:DB_PORT_CL}",
+            DB_NAME_CL: "${ssm:/medical-appointments/staging/db/name/cl, env:DB_NAME_CL}",
+            DB_USER_CL: "${ssm:/medical-appointments/staging/db/user/cl, env:DB_USER_CL}",
+            DB_PASSWORD_CL: "${ssm:/medical-appointments/staging/db/password/cl, env:DB_PASSWORD_CL}",
+
+            DB_SECRET_ARN_PE: "${ssm:/medical-appointments/staging/rds/pe/secret-arn, env:DB_SECRET_ARN_PE}",
+            DB_SECRET_ARN_CL: "${ssm:/medical-appointments/staging/rds/cl/secret-arn, env:DB_SECRET_ARN_CL}",
+        },
+
+        prod: {
+            DB_HOST_PE: "${ssm:/medical-appointments/prod/db/host/pe, env:DB_HOST_PE}",
+            DB_PORT_PE: "${ssm:/medical-appointments/prod/db/port/pe, env:DB_PORT_PE}",
+            DB_NAME_PE: "${ssm:/medical-appointments/prod/db/name/pe, env:DB_NAME_PE}",
+            DB_USER_PE: "${ssm:/medical-appointments/prod/db/user/pe, env:DB_USER_PE}",
+            DB_PASSWORD_PE: "${ssm:/medical-appointments/prod/db/password/pe, env:DB_PASSWORD_PE}",
+
+            DB_HOST_CL: "${ssm:/medical-appointments/prod/db/host/cl, env:DB_HOST_CL}",
+            DB_PORT_CL: "${ssm:/medical-appointments/prod/db/port/cl, env:DB_PORT_CL}",
+            DB_NAME_CL: "${ssm:/medical-appointments/prod/db/name/cl, env:DB_NAME_CL}",
+            DB_USER_CL: "${ssm:/medical-appointments/prod/db/user/cl, env:DB_USER_CL}",
+            DB_PASSWORD_CL: "${ssm:/medical-appointments/prod/db/password/cl, env:DB_PASSWORD_CL}",
+
+            DB_SECRET_ARN_PE: "${ssm:/medical-appointments/prod/rds/pe/secret-arn, env:DB_SECRET_ARN_PE}",
+            DB_SECRET_ARN_CL: "${ssm:/medical-appointments/prod/rds/cl/secret-arn, env:DB_SECRET_ARN_CL}",
+        },
+    },
+    // -------------------------------------------
+
     provider: {
         name: "aws",
         runtime: "nodejs22.x",
-        region: "us-east-1",
-        stage: "${opt:stage, 'dev'}",
+        region: "${param:REGION}" as any,
+        stage: "${param:STAGE}",
+
+        // Global defaults for all Lambdas
+        memorySize: "${param:DEFAULT_MEMORY}" as unknown as number,
+        timeout: "${param:DEFAULT_TIMEOUT}" as unknown as number,
+
         apiGateway: {
-            minimumCompressionSize: 1024,
+            minimumCompressionSize: "${param:API_COMPRESSION}" as unknown as number,
             shouldStartNameWithService: true,
         },
         environment: {
             AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
             NODE_OPTIONS: "--enable-source-maps --stack-trace-limit=1000",
+
             // DynamoDB
             APPOINTMENTS_TABLE: "${self:service}-appointments-${self:provider.stage}",
             // SNS
@@ -28,11 +122,21 @@ const serverlessConfiguration: AWS = {
             SQS_CL_URL: { Ref: "AppointmentClQueue" },
             SQS_COMPLETION_URL: { Ref: "AppointmentCompletionQueue" },
             // EventBridge
-            EVENT_BUS_NAME: "default",
-            // RDS (these would be provided via SSM/Secrets Manager in real scenario)
-            DB_HOST_PE: "${ssm:/medical-appointments/${self:provider.stage}/db/host/pe}",
-            DB_HOST_CL: "${ssm:/medical-appointments/${self:provider.stage}/db/host/cl}",
-            DB_SECRET_ARN: "${ssm:/medical-appointments/${self:provider.stage}/db/secret/arn}",
+            EVENT_BUS_NAME: "${param:EVENT_BUS_NAME}",
+
+            // DB (via params)
+            DB_HOST_PE: "${param:DB_HOST_PE}",
+            DB_HOST_CL: "${param:DB_HOST_CL}",
+            DB_PORT_PE: "${param:DB_PORT_PE}",
+            DB_PORT_CL: "${param:DB_PORT_CL}",
+            DB_NAME_PE: "${param:DB_NAME_PE}",
+            DB_NAME_CL: "${param:DB_NAME_CL}",
+            DB_USER_PE: "${param:DB_USER_PE}",
+            DB_USER_CL: "${param:DB_USER_CL}",
+            DB_PASSWORD_PE: "${param:DB_PASSWORD_PE}",
+            DB_PASSWORD_CL: "${param:DB_PASSWORD_CL}",
+            DB_SECRET_ARN_PE: "${param:DB_SECRET_ARN_PE}",
+            DB_SECRET_ARN_CL: "${param:DB_SECRET_ARN_CL}",
         },
         iam: {
             role: {
@@ -78,14 +182,14 @@ const serverlessConfiguration: AWS = {
                             { "Fn::GetAtt": ["AppointmentCompletionQueue", "Arn"] },
                         ],
                     },
-                    // EventBridge permissions
+                    // EventBridge permissions - Dynamic event bus support
                     {
                         Effect: "Allow",
                         Action: [
                             "events:PutEvents",
                         ],
                         Resource: [
-                            "arn:aws:events:${aws:region}:${aws:accountId}:event-bus/default",
+                            "arn:aws:events:${aws:region}:${aws:accountId}:event-bus/${param:EVENT_BUS_NAME}",
                         ],
                     },
                     // Secrets Manager permissions (for RDS credentials)
@@ -109,16 +213,42 @@ const serverlessConfiguration: AWS = {
                             "arn:aws:ssm:${aws:region}:${aws:accountId}:parameter/medical-appointments/*",
                         ],
                     },
+                    // CloudWatch Logs permissions (for custom alarms)
+                    {
+                        Effect: "Allow",
+                        Action: [
+                            "logs:CreateLogGroup",
+                            "logs:CreateLogStream",
+                            "logs:PutLogEvents",
+                        ],
+                        Resource: [
+                            "arn:aws:logs:${aws:region}:${aws:accountId}:*",
+                        ],
+                    },
                 ],
             },
+        },
+        logRetentionInDays: 14,
+        tracing: {
+            lambda: true,
+            apiGateway: true
+        },
+        stackTags: {
+            Service: "${self:service}",
+            Stage: "${self:provider.stage}",
+            Owner: "${param:OWNER}",
+            CostCenter: "${param:COST_CENTER}"
+        },
+        tags: {
+            Service: "${self:service}",
+            Stage: "${self:provider.stage}"
         },
     },
     functions: {
         // Main appointment Lambda - handles API endpoints and completion
+        // ✅ Inherits memorySize and timeout from provider (256MB, 30s)
         appointment: {
             handler: "src/modules/appointments/interfaces/http/postAppointment.handler",
-            timeout: 30,
-            memorySize: 256,
             events: [
                 {
                     http: {
@@ -129,10 +259,9 @@ const serverlessConfiguration: AWS = {
                 },
             ],
         },
+        // ✅ Inherits memorySize and timeout from provider (256MB, 30s)
         getAppointments: {
             handler: "src/modules/appointments/interfaces/http/getAppointments.handler",
-            timeout: 30,
-            memorySize: 256,
             events: [
                 {
                     http: {
@@ -151,10 +280,10 @@ const serverlessConfiguration: AWS = {
             ],
         },
         // Completion handler for updating appointment status
+        // ✅ Inherits memorySize from provider (256MB), override timeout for SQS
         appointmentCompletion: {
-            handler: "src/modules/appointments/interfaces/queues/completionHandler.handler",
-            timeout: 60,
-            memorySize: 256,
+            handler: "src/modules/appointments/interfaces/sqs/processCompletedAppointmentQueue.handler",
+            timeout: 60, // Override: SQS processing needs more time
             events: [
                 {
                     sqs: {
@@ -166,10 +295,11 @@ const serverlessConfiguration: AWS = {
             ],
         },
         // Peru country Lambda - processes PE appointments
+        // ✅ Explicit override: needs more resources for heavy processing
         appointmentPe: {
-            handler: "src/modules/appointments/interfaces/queues/appointmentPeHandler.handler",
-            timeout: 60,
-            memorySize: 512,
+            handler: "src/modules/appointments/interfaces/sqs/processPendingAppointmentQueue.handler",
+            timeout: 60,     // Override: SQS + RDS operations need more time
+            memorySize: 512, // Override: Heavy processing needs more memory
             events: [
                 {
                     sqs: {
@@ -180,11 +310,12 @@ const serverlessConfiguration: AWS = {
                 },
             ],
         },
-        // Chile country Lambda - processes CL appointments
+        // Chile country Lambda - processes CL appointments  
+        // ✅ Explicit override: needs more resources for heavy processing
         appointmentCl: {
-            handler: "src/modules/appointments/interfaces/queues/appointmentClHandler.handler",
-            timeout: 60,
-            memorySize: 512,
+            handler: "src/modules/appointments/interfaces/sqs/processPendingAppointmentQueue.handler",
+            timeout: 60,     // Override: SQS + RDS operations need more time
+            memorySize: 512, // Override: Heavy processing needs more memory
             events: [
                 {
                     sqs: {
@@ -236,6 +367,14 @@ const serverlessConfiguration: AWS = {
                             Key: "Stage",
                             Value: "${self:provider.stage}",
                         },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
+                        },
                     ],
                 },
             },
@@ -255,6 +394,14 @@ const serverlessConfiguration: AWS = {
                             Key: "Stage",
                             Value: "${self:provider.stage}",
                         },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
+                        },
                     ],
                 },
             },
@@ -264,11 +411,12 @@ const serverlessConfiguration: AWS = {
                 Type: "AWS::SQS::Queue",
                 Properties: {
                     QueueName: "${self:service}-appointment-pe-${self:provider.stage}",
-                    VisibilityTimeoutSeconds: 360, // 6 minutes (Lambda timeout * 6)
+                    VisibilityTimeoutSeconds: "${param:SQS_VISIBILITY_TIMEOUT}",
                     MessageRetentionPeriod: 1209600, // 14 days
+                    ReceiveMessageWaitTimeSeconds: "${param:SQS_LONG_POLLING}", // Long polling optimization
                     RedrivePolicy: {
                         deadLetterTargetArn: { "Fn::GetAtt": ["AppointmentPeDlq", "Arn"] },
-                        maxReceiveCount: 3,
+                        maxReceiveCount: "${param:SQS_MAX_RECEIVE}",
                     },
                     Tags: [
                         {
@@ -282,6 +430,14 @@ const serverlessConfiguration: AWS = {
                         {
                             Key: "Country",
                             Value: "PE",
+                        },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
                         },
                     ],
                 },
@@ -306,6 +462,14 @@ const serverlessConfiguration: AWS = {
                             Key: "Country",
                             Value: "PE",
                         },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
+                        },
                     ],
                 },
             },
@@ -315,11 +479,12 @@ const serverlessConfiguration: AWS = {
                 Type: "AWS::SQS::Queue",
                 Properties: {
                     QueueName: "${self:service}-appointment-cl-${self:provider.stage}",
-                    VisibilityTimeoutSeconds: 360, // 6 minutes
+                    VisibilityTimeoutSeconds: "${param:SQS_VISIBILITY_TIMEOUT}",
                     MessageRetentionPeriod: 1209600, // 14 days
+                    ReceiveMessageWaitTimeSeconds: "${param:SQS_LONG_POLLING}", // Long polling optimization
                     RedrivePolicy: {
                         deadLetterTargetArn: { "Fn::GetAtt": ["AppointmentClDlq", "Arn"] },
-                        maxReceiveCount: 3,
+                        maxReceiveCount: "${param:SQS_MAX_RECEIVE}",
                     },
                     Tags: [
                         {
@@ -333,6 +498,14 @@ const serverlessConfiguration: AWS = {
                         {
                             Key: "Country",
                             Value: "CL",
+                        },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
                         },
                     ],
                 },
@@ -357,20 +530,29 @@ const serverlessConfiguration: AWS = {
                             Key: "Country",
                             Value: "CL",
                         },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
+                        },
                     ],
                 },
             },
 
-            // SQS Queue for completion notifications
+            // SQS Queue for completion notifications - Optimized for faster processing
             AppointmentCompletionQueue: {
                 Type: "AWS::SQS::Queue",
                 Properties: {
                     QueueName: "${self:service}-appointment-completion-${self:provider.stage}",
-                    VisibilityTimeoutSeconds: 180, // 3 minutes
+                    VisibilityTimeoutSeconds: 180, // 3 minutes - faster for completion processing
                     MessageRetentionPeriod: 1209600, // 14 days
+                    ReceiveMessageWaitTimeSeconds: "${param:SQS_LONG_POLLING}", // Long polling optimization
                     RedrivePolicy: {
                         deadLetterTargetArn: { "Fn::GetAtt": ["AppointmentCompletionDlq", "Arn"] },
-                        maxReceiveCount: 3,
+                        maxReceiveCount: "${param:SQS_MAX_RECEIVE}",
                     },
                     Tags: [
                         {
@@ -380,6 +562,14 @@ const serverlessConfiguration: AWS = {
                         {
                             Key: "Stage",
                             Value: "${self:provider.stage}",
+                        },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
                         },
                     ],
                 },
@@ -399,6 +589,94 @@ const serverlessConfiguration: AWS = {
                         {
                             Key: "Stage",
                             Value: "${self:provider.stage}",
+                        },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
+                        },
+                    ],
+                },
+            },
+
+            // CloudWatch Alarm for DLQ monitoring
+            AppointmentDlqAlarm: {
+                Type: "AWS::CloudWatch::Alarm",
+                Properties: {
+                    AlarmName: "${self:service}-dlq-messages-${self:provider.stage}",
+                    AlarmDescription: "Alert when messages appear in Peru DLQ",
+                    MetricName: "ApproximateNumberOfVisibleMessages",
+                    Namespace: "AWS/SQS",
+                    Statistic: "Sum",
+                    Period: 300,
+                    EvaluationPeriods: 1,
+                    Threshold: 1,
+                    ComparisonOperator: "GreaterThanOrEqualToThreshold",
+                    Dimensions: [
+                        {
+                            Name: "QueueName",
+                            Value: { "Fn::GetAtt": ["AppointmentPeDlq", "QueueName"] }
+                        }
+                    ],
+                    Tags: [
+                        {
+                            Key: "Service",
+                            Value: "${self:service}",
+                        },
+                        {
+                            Key: "Stage",
+                            Value: "${self:provider.stage}",
+                        },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
+                        },
+                    ],
+                },
+            },
+
+            // CloudWatch Alarm for Chile DLQ monitoring
+            AppointmentClDlqAlarm: {
+                Type: "AWS::CloudWatch::Alarm",
+                Properties: {
+                    AlarmName: "${self:service}-cl-dlq-messages-${self:provider.stage}",
+                    AlarmDescription: "Alert when messages appear in Chile DLQ",
+                    MetricName: "ApproximateNumberOfVisibleMessages",
+                    Namespace: "AWS/SQS",
+                    Statistic: "Sum",
+                    Period: 300,
+                    EvaluationPeriods: 1,
+                    Threshold: 1,
+                    ComparisonOperator: "GreaterThanOrEqualToThreshold",
+                    Dimensions: [
+                        {
+                            Name: "QueueName",
+                            Value: { "Fn::GetAtt": ["AppointmentClDlq", "QueueName"] }
+                        }
+                    ],
+                    Tags: [
+                        {
+                            Key: "Service",
+                            Value: "${self:service}",
+                        },
+                        {
+                            Key: "Stage",
+                            Value: "${self:provider.stage}",
+                        },
+                        {
+                            Key: "Owner",
+                            Value: "${param:OWNER}",
+                        },
+                        {
+                            Key: "CostCenter",
+                            Value: "${param:COST_CENTER}",
                         },
                     ],
                 },
@@ -496,9 +774,6 @@ const serverlessConfiguration: AWS = {
                         {
                             Id: "AppointmentCompletionTarget",
                             Arn: { "Fn::GetAtt": ["AppointmentCompletionQueue", "Arn"] },
-                            SqsParameters: {
-                                MessageGroupId: "appointment-completion",
-                            },
                         },
                     ],
                 },
@@ -563,21 +838,24 @@ const serverlessConfiguration: AWS = {
         },
     },
     custom: {
-        esbuild: {
-            bundle: true,
-            minify: false,
-            sourcemap: true,
-            exclude: ["aws-sdk"],
-            target: "node22",
-            define: { "require.resolve": undefined },
-            platform: "node",
-            concurrency: 10,
-            format: "esm",
-            mainFields: ["module", "main"],
-            banner: {
-                js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+        localstack: {
+            stages: ["dev"],
+            host: "http://localhost",
+            edgePort: 4566,
+            autostart: false,
+            lambda: {
+                mountCode: false,
+            },
+            docker: {
+                sudo: false,
             },
         },
+        "serverless-offline": {
+            httpPort: 3000,
+            babelOptions: {
+                presets: ["env"]
+            }
+        }
     },
 };
 

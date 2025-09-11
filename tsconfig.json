@@ -23,7 +23,8 @@
       "@/*": ["src/*"],
       "@/modules/*": ["src/modules/*"],
       "@/shared/*": ["src/shared/*"],
-      "@/appointments/*": ["src/modules/appointments/*"]
+      "@/appointments/*": ["src/modules/appointments/*"],
+      "@tests/*": ["__tests__/*"]
     }
   },
   "include": [

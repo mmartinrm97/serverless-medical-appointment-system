@@ -110,6 +110,8 @@ credentials.json
 # Local development files
 .local/
 local-*
+volume/
+.env.local
 
 # Backup files
 *.bak
