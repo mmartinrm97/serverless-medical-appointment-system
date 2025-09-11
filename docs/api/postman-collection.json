@@ -1,0 +1,453 @@
+{
+    "item": [
+        {
+            "id": "d0dd4002-549f-4f40-aa7c-b3e6d6f0edbd",
+            "name": "appointments",
+            "item": [
+                {
+                    "id": "7670f968-f221-4d25-b60c-8d600a46f0bc",
+                    "name": "Create a new medical appointment",
+                    "request": {
+                        "name": "Create a new medical appointment",
+                        "description": {
+                            "content": "Creates a new appointment for a patient in the specified country (PE or CL)",
+                            "type": "text/plain"
+                        },
+                        "url": {
+                            "path": [
+                                "appointments"
+                            ],
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "method": "POST",
+                        "auth": null,
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"insuredId\": \"<string>\",\n  \"scheduleId\": \"<integer>\",\n  \"countryISO\": \"<string>\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    },
+                    "response": [
+                        {
+                            "id": "ef0bfeb3-8221-4128-a729-6f591519e79d",
+                            "name": "Appointment created successfully",
+                            "originalRequest": {
+                                "url": {
+                                    "path": [
+                                        "appointments"
+                                    ],
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "method": "POST",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"insuredId\": \"12345\",\n  \"scheduleId\": 100,\n  \"countryISO\": \"PE\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "status": "Created",
+                            "code": 201,
+                            "header": [
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Origin response header indicates whether the response can be shared with requesting code from the given [origin](https://developer.mozilla.org/en-US/docs/Glossary/Origin). - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin)",
+                                    "key": "Access-Control-Allow-Origin",
+                                    "value": "https://developer.mozilla.org"
+                                },
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Credentials response header tells browsers whether to expose the response to the frontend JavaScript code when the request's credentials mode ([Request.credentials](https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials)) is include. - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials)",
+                                    "key": "Access-Control-Allow-Credentials",
+                                    "value": "true"
+                                },
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"appointmentId\": \"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\n  \"status\": \"pending\",\n  \"message\": \"Appointment created successfully and is being processed\"\n}",
+                            "cookie": [],
+                            "_postman_previewlanguage": "json"
+                        },
+                        {
+                            "id": "c2ca0937-901c-45a6-9df1-e998b22de237",
+                            "name": "Invalid input data",
+                            "originalRequest": {
+                                "url": {
+                                    "path": [
+                                        "appointments"
+                                    ],
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "method": "POST",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"insuredId\": \"12345\",\n  \"scheduleId\": 100,\n  \"countryISO\": \"PE\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "status": "Bad Request",
+                            "code": 400,
+                            "header": [
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Origin response header indicates whether the response can be shared with requesting code from the given [origin](https://developer.mozilla.org/en-US/docs/Glossary/Origin). - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin)",
+                                    "key": "Access-Control-Allow-Origin",
+                                    "value": "https://developer.mozilla.org"
+                                },
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Credentials response header tells browsers whether to expose the response to the frontend JavaScript code when the request's credentials mode ([Request.credentials](https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials)) is include. - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials)",
+                                    "key": "Access-Control-Allow-Credentials",
+                                    "value": "true"
+                                },
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"error\": \"ValidationError\",\n  \"message\": \"Invalid input data\",\n  \"timestamp\": \"2024-09-11T10:30:00.000Z\"\n}",
+                            "cookie": [],
+                            "_postman_previewlanguage": "json"
+                        },
+                        {
+                            "id": "1ca604c8-e378-4150-8d88-360182746c20",
+                            "name": "Internal server error",
+                            "originalRequest": {
+                                "url": {
+                                    "path": [
+                                        "appointments"
+                                    ],
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "query": [],
+                                    "variable": []
+                                },
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "method": "POST",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"insuredId\": \"12345\",\n  \"scheduleId\": 100,\n  \"countryISO\": \"PE\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "header": [
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Origin response header indicates whether the response can be shared with requesting code from the given [origin](https://developer.mozilla.org/en-US/docs/Glossary/Origin). - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin)",
+                                    "key": "Access-Control-Allow-Origin",
+                                    "value": "https://developer.mozilla.org"
+                                },
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Credentials response header tells browsers whether to expose the response to the frontend JavaScript code when the request's credentials mode ([Request.credentials](https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials)) is include. - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials)",
+                                    "key": "Access-Control-Allow-Credentials",
+                                    "value": "true"
+                                },
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"error\": \"ValidationError\",\n  \"message\": \"Invalid input data\",\n  \"timestamp\": \"2024-09-11T10:30:00.000Z\"\n}",
+                            "cookie": [],
+                            "_postman_previewlanguage": "json"
+                        }
+                    ],
+                    "event": [],
+                    "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                    }
+                },
+                {
+                    "id": "f37a85a3-ca2c-4705-ae92-5d778ff47bb9",
+                    "name": "Get appointments for an insured person",
+                    "request": {
+                        "name": "Get appointments for an insured person",
+                        "description": {
+                            "content": "Retrieves all appointments for a specific insured person",
+                            "type": "text/plain"
+                        },
+                        "url": {
+                            "path": [
+                                "appointments",
+                                ":insuredId"
+                            ],
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "disabled": false,
+                                    "type": "any",
+                                    "value": "<string>",
+                                    "key": "insuredId",
+                                    "description": "(Required) 5-digit insured identification code"
+                                }
+                            ]
+                        },
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "method": "GET",
+                        "auth": null
+                    },
+                    "response": [
+                        {
+                            "id": "d574304b-1010-45d1-a764-6d82b17599b3",
+                            "name": "Appointments retrieved successfully",
+                            "originalRequest": {
+                                "url": {
+                                    "path": [
+                                        "appointments",
+                                        ":insuredId"
+                                    ],
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "disabled": false,
+                                            "type": "any",
+                                            "value": "<string>",
+                                            "key": "insuredId",
+                                            "description": "(Required) 5-digit insured identification code"
+                                        }
+                                    ]
+                                },
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "method": "GET",
+                                "body": {}
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Origin response header indicates whether the response can be shared with requesting code from the given [origin](https://developer.mozilla.org/en-US/docs/Glossary/Origin). - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin)",
+                                    "key": "Access-Control-Allow-Origin",
+                                    "value": "https://developer.mozilla.org"
+                                },
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Credentials response header tells browsers whether to expose the response to the frontend JavaScript code when the request's credentials mode ([Request.credentials](https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials)) is include. - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials)",
+                                    "key": "Access-Control-Allow-Credentials",
+                                    "value": "true"
+                                },
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "[\n  {\n    \"appointmentId\": \"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\n    \"insuredId\": \"12345\",\n    \"scheduleId\": 100,\n    \"countryISO\": \"PE\",\n    \"status\": \"completed\",\n    \"createdAt\": \"2024-09-11T10:30:00.000Z\",\n    \"updatedAt\": \"2024-09-11T10:32:15.000Z\"\n  },\n  {\n    \"appointmentId\": \"01ARZ3NDEKTSV4RRFFQ69G5FAV\",\n    \"insuredId\": \"12345\",\n    \"scheduleId\": 100,\n    \"countryISO\": \"PE\",\n    \"status\": \"completed\",\n    \"createdAt\": \"2024-09-11T10:30:00.000Z\",\n    \"updatedAt\": \"2024-09-11T10:32:15.000Z\"\n  }\n]",
+                            "cookie": [],
+                            "_postman_previewlanguage": "json"
+                        },
+                        {
+                            "id": "92b5d459-6faf-4716-a5fa-d90bec0a8269",
+                            "name": "No appointments found for the insured person",
+                            "originalRequest": {
+                                "url": {
+                                    "path": [
+                                        "appointments",
+                                        ":insuredId"
+                                    ],
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "disabled": false,
+                                            "type": "any",
+                                            "value": "<string>",
+                                            "key": "insuredId",
+                                            "description": "(Required) 5-digit insured identification code"
+                                        }
+                                    ]
+                                },
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "method": "GET",
+                                "body": {}
+                            },
+                            "status": "Not Found",
+                            "code": 404,
+                            "header": [
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Origin response header indicates whether the response can be shared with requesting code from the given [origin](https://developer.mozilla.org/en-US/docs/Glossary/Origin). - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin)",
+                                    "key": "Access-Control-Allow-Origin",
+                                    "value": "https://developer.mozilla.org"
+                                },
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Credentials response header tells browsers whether to expose the response to the frontend JavaScript code when the request's credentials mode ([Request.credentials](https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials)) is include. - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials)",
+                                    "key": "Access-Control-Allow-Credentials",
+                                    "value": "true"
+                                },
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"error\": \"NotFound\",\n  \"message\": \"No appointments found for the specified insured ID\",\n  \"timestamp\": \"1971-06-17T08:24:26.657Z\"\n}",
+                            "cookie": [],
+                            "_postman_previewlanguage": "json"
+                        },
+                        {
+                            "id": "d2db6ffa-5de9-47cc-b78d-563b5722e02e",
+                            "name": "Internal server error",
+                            "originalRequest": {
+                                "url": {
+                                    "path": [
+                                        "appointments",
+                                        ":insuredId"
+                                    ],
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "query": [],
+                                    "variable": [
+                                        {
+                                            "disabled": false,
+                                            "type": "any",
+                                            "value": "<string>",
+                                            "key": "insuredId",
+                                            "description": "(Required) 5-digit insured identification code"
+                                        }
+                                    ]
+                                },
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "method": "GET",
+                                "body": {}
+                            },
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "header": [
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Origin response header indicates whether the response can be shared with requesting code from the given [origin](https://developer.mozilla.org/en-US/docs/Glossary/Origin). - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin)",
+                                    "key": "Access-Control-Allow-Origin",
+                                    "value": "https://developer.mozilla.org"
+                                },
+                                {
+                                    "disabled": false,
+                                    "description": "The Access-Control-Allow-Credentials response header tells browsers whether to expose the response to the frontend JavaScript code when the request's credentials mode ([Request.credentials](https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials)) is include. - [MDN Link](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Credentials)",
+                                    "key": "Access-Control-Allow-Credentials",
+                                    "value": "true"
+                                },
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"error\": \"ValidationError\",\n  \"message\": \"Invalid input data\",\n  \"timestamp\": \"2024-09-11T10:30:00.000Z\"\n}",
+                            "cookie": [],
+                            "_postman_previewlanguage": "json"
+                        }
+                    ],
+                    "event": [],
+                    "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                    }
+                }
+            ],
+            "event": []
+        }
+    ],
+    "event": [],
+    "variable": [
+        {
+            "type": "string",
+            "value": "https://api.medical-appointments.com",
+            "key": "baseUrl"
+        }
+    ],
+    "info": {
+        "_postman_id": "c187e953-354b-4777-8e09-245edf8ec54f",
+        "name": "Medical Appointments API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "description": {
+            "content": "Serverless API for managing medical appointments in Peru and Chile\n\nContact Support:\n Name: API Support\n Email: support@medical-appointments.com",
+            "type": "text/plain"
+        }
+    }
+}

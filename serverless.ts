@@ -32,8 +32,8 @@ const serverlessConfiguration: AWS = {
         }
     },
     plugins: [
-
         "serverless-offline",
+        "serverless-openapi-documenter",
         "serverless-localstack",
     ],
 
@@ -149,21 +149,21 @@ const serverlessConfiguration: AWS = {
             SQS_CL_URL: "${param:SQS_CL_URL, 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/medical-appointments-api-appointment-cl-dev'}",
             SQS_COMPLETION_URL: "${param:SQS_COMPLETION_URL, 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/medical-appointments-api-appointment-completion-dev'}",
             // EventBridge
-            EVENT_BUS_NAME: "${param:EVENT_BUS_NAME}",
+            EVENT_BUS_NAME: "${param:EVENT_BUS_NAME,'default'}",
 
-            // DB (via params)
-            DB_HOST_PE: "${param:DB_HOST_PE}",
-            DB_HOST_CL: "${param:DB_HOST_CL}",
-            DB_PORT_PE: "${param:DB_PORT_PE}",
-            DB_PORT_CL: "${param:DB_PORT_CL}",
-            DB_NAME_PE: "${param:DB_NAME_PE}",
-            DB_NAME_CL: "${param:DB_NAME_CL}",
-            DB_USER_PE: "${param:DB_USER_PE}",
-            DB_USER_CL: "${param:DB_USER_CL}",
-            DB_PASSWORD_PE: "${param:DB_PASSWORD_PE}",
-            DB_PASSWORD_CL: "${param:DB_PASSWORD_CL}",
-            DB_SECRET_ARN_PE: "${param:DB_SECRET_ARN_PE}",
-            DB_SECRET_ARN_CL: "${param:DB_SECRET_ARN_CL}",
+            // DB (via params) - with fallback values for documentation generation
+            DB_HOST_PE: "${param:DB_HOST_PE, '127.0.0.1'}",
+            DB_HOST_CL: "${param:DB_HOST_CL, '127.0.0.1'}",
+            DB_PORT_PE: "${param:DB_PORT_PE, '3306'}",
+            DB_PORT_CL: "${param:DB_PORT_CL, '3306'}",
+            DB_NAME_PE: "${param:DB_NAME_PE, 'medical_pe'}",
+            DB_NAME_CL: "${param:DB_NAME_CL, 'medical_cl'}",
+            DB_USER_PE: "${param:DB_USER_PE, 'root'}",
+            DB_USER_CL: "${param:DB_USER_CL, 'root'}",
+            DB_PASSWORD_PE: "${param:DB_PASSWORD_PE, 'password'}",
+            DB_PASSWORD_CL: "${param:DB_PASSWORD_CL, 'password'}",
+            DB_SECRET_ARN_PE: "${param:DB_SECRET_ARN_PE, ''}",
+            DB_SECRET_ARN_CL: "${param:DB_SECRET_ARN_CL, ''}",
         },
         iam: {
             role: {
@@ -282,6 +282,8 @@ const serverlessConfiguration: AWS = {
                         method: "post",
                         path: "/appointments",
                         cors: true,
+                        // @ts-ignore - OpenAPI documentation plugin extends this type
+                        documentation: "${file(serverless.doc.yml):endpoints.createAppointment}",
                     },
                 },
             ],
@@ -295,6 +297,8 @@ const serverlessConfiguration: AWS = {
                         method: "get",
                         path: "/appointments/{insuredId}",
                         cors: true,
+                        // @ts-ignore - OpenAPI documentation plugin extends this type
+                        documentation: "${file(serverless.doc.yml):endpoints.getAppointments}",
                         request: {
                             parameters: {
                                 paths: {
@@ -865,6 +869,7 @@ const serverlessConfiguration: AWS = {
         },
     },
     custom: {
+        documentation: "${file(serverless.doc.yml):documentation}",
         localstack: {
             stages: ["dev"],
             host: "http://localhost",

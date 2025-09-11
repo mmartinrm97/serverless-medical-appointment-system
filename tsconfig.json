@@ -31,6 +31,7 @@
     "src/**/*",
     "__tests__/**/*",
     "serverless.ts",
+    "serverless.doc.ts",
     "vitest.config.ts",
     "vitest.e2e.config.ts",
     "vitest.integration.config.ts",
