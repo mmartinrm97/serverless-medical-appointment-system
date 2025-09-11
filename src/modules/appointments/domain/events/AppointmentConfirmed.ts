@@ -104,7 +104,7 @@ export const validateAppointmentConfirmedData = (
         typeof eventData.insuredId === 'string' &&
         typeof eventData.scheduleId === 'number' &&
         typeof eventData.countryISO === 'string' &&
-        ['PE', 'CL'].includes(eventData.countryISO as string) &&
+        ['PE', 'CL'].includes(eventData.countryISO) &&
         typeof eventData.processedAt === 'string' &&
         typeof eventData.source === 'string'
     );

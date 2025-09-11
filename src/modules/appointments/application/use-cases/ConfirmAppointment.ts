@@ -4,7 +4,6 @@
  */
 
 import type { IAppointmentsRepository } from '../../domain/repositories/IAppointmentsRepository.js';
-import type { AppointmentConfirmedEvent } from '../../domain/events/AppointmentConfirmed.js';
 import { isAppointmentConfirmedEvent, validateAppointmentConfirmedData } from '../../domain/events/AppointmentConfirmed.js';
 import { NotFoundError, ValidationError } from '@/shared/domain/errors/index.js';
 import { logger } from '@/shared/infrastructure/logging/logger.js';
@@ -60,7 +59,7 @@ export class ConfirmAppointment {
                 );
             }
 
-            const appointmentConfirmedEvent = event as AppointmentConfirmedEvent;
+            const appointmentConfirmedEvent = event;
 
             if (!validateAppointmentConfirmedData(appointmentConfirmedEvent.detail)) {
                 throw new ValidationError(

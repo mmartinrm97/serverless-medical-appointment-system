@@ -79,7 +79,7 @@ export class SNSMessagePublisher implements IEventPublisher {
     try {
       // Extract country from event detail for message attributes
       const countryISO = eventData.detail.countryISO as string;
-      
+
       if (!countryISO || !['PE', 'CL'].includes(countryISO)) {
         throw new Error('Invalid or missing countryISO in event detail');
       }
