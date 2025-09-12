@@ -31,6 +31,26 @@ This serverless backend implements a medical appointment scheduling system that:
 - **Uses event-driven architecture** with SNS, SQS, and EventBridge
 - **Provides real-time status tracking** for appointment processing
 
+### 🌐 Live Demo
+
+The API is currently deployed and available for testing:
+
+**🔗 Base URL**: `https://8oafjkqvti.execute-api.us-east-1.amazonaws.com/dev`
+
+**Try it now:**
+
+```bash
+# Create an appointment
+curl -X POST "https://8oafjkqvti.execute-api.us-east-1.amazonaws.com/dev/appointments" \
+  -H "Content-Type: application/json" \
+  -d '{"insuredId": "12345", "scheduleId": 100, "countryISO": "PE"}'
+
+# Get appointments for user
+curl "https://8oafjkqvti.execute-api.us-east-1.amazonaws.com/dev/appointments/12345"
+```
+
+> 💡 **Note**: This is a development environment. For production use, follow the [deployment guide](#-deployment).
+
 ### Business Flow
 
 ```mermaid
@@ -101,10 +121,92 @@ src/
 
 ### Prerequisites
 
-- Node.js 20.x
+- Node.js 20.x or higher ([Download](https://nodejs.org/))
 - pnpm (recommended) or npm
-- AWS CLI configured
-- Docker (for local development)
+- AWS Account with appropriate permissions
+- AWS CLI v2 ([Installation Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html))
+- Docker (for local development) ([Download](https://www.docker.com/get-started))
+- Git
+
+### 🔧 AWS Setup (Required for Deployment)
+
+Before deploying to AWS, you need to configure your AWS credentials and permissions.
+
+#### Step 1: Create AWS Account
+
+1. Go to [AWS Console](https://aws.amazon.com/console/)
+2. Create a new account or sign in to existing one
+
+#### Step 2: Create IAM User for Serverless Deployment
+
+1. **Open IAM Console**:
+   - Go to [IAM Users](https://console.aws.amazon.com/iam/home#/users)
+   - Click "Create user"
+
+2. **Configure User**:
+   - User name: `serverless-deploy`
+   - Select "Provide user access to the AWS Management Console" if you want console access
+   - Select "I want to create an IAM user"
+
+3. **Set Permissions**:
+   - Choose "Attach policies directly"
+   - Add these policies:
+     - `PowerUserAccess` (recommended for full deployment capabilities)
+     - Or for minimal permissions, create a custom policy with:
+       - `AWSLambda_FullAccess`
+       - `IAMFullAccess`
+       - `AmazonAPIGatewayAdministrator`
+       - `AmazonDynamoDBFullAccess`
+       - `AmazonSNSFullAccess`
+       - `AmazonSQSFullAccess`
+       - `AmazonEventBridgeFullAccess`
+       - `CloudFormationFullAccess`
+       - `CloudWatchFullAccess`
+
+4. **Create Access Keys**:
+   - After user creation, go to the user details
+   - Click "Security credentials" tab
+   - Click "Create access key"
+   - Choose "Command Line Interface (CLI)"
+   - Save the Access Key ID and Secret Access Key
+
+#### Step 3: Configure AWS CLI
+
+```bash
+# Configure AWS CLI with your credentials
+aws configure
+
+# When prompted, enter:
+# AWS Access Key ID: [Your Access Key from Step 2]
+# AWS Secret Access Key: [Your Secret Key from Step 2]
+# Default region name: us-east-1
+# Default output format: json
+
+# Verify configuration
+aws sts get-caller-identity
+```
+
+**Expected output:**
+
+```json
+{
+  "UserId": "AIDACKCEVSQ6C2EXAMPLE",
+  "Account": "123456789012",
+  "Arn": "arn:aws:iam::123456789012:user/serverless-deploy"
+}
+```
+
+#### Step 4: Set Required Environment Variables
+
+Create a `.env.aws` file for AWS deployment (copy from `.env.aws.example`):
+
+```bash
+# Copy the AWS environment template
+cp .env.aws.example .env.aws
+
+# Edit with your AWS account details
+# Replace 123456789012 with your actual AWS Account ID
+```
 
 ### Installation
 
@@ -115,6 +217,9 @@ cd serverless-medical-appointment-system/medical-appointments-api
 
 # Install dependencies
 pnpm install
+
+# Setup local environment (if .env doesn't exist)
+cp .env.example .env
 
 # Start local development environment
 pnpm run local:start
@@ -132,27 +237,60 @@ curl http://localhost:3000/appointments/12345
 
 ## 📡 API Endpoints
 
-### Base URL
+### Base URLs
 
-- **Local**: `http://localhost:3000`
-- **Production**: `https://your-api-gateway-url.amazonaws.com`
+- **Local Development**: `http://localhost:3000`
+- **AWS Development**: `https://8oafjkqvti.execute-api.us-east-1.amazonaws.com/dev`
+- **AWS Production**: `https://your-api-gateway-url.amazonaws.com/prod` (after deployment)
 
-### Endpoints
+> 💡 **Note**: Replace the development URL with your actual API Gateway URL after deployment
 
-#### 🔸 Create Appointment
+### Authentication
+
+This API currently **does not require authentication** for the technical challenge. In production environments, you would typically add:
+
+- API Keys
+- JWT tokens
+- AWS IAM authentication
+- OAuth 2.0
+
+### API Endpoints Overview
+
+| Method | Endpoint                    | Description                    | Auth Required |
+| ------ | --------------------------- | ------------------------------ | ------------- |
+| POST   | `/appointments`             | Create new appointment         | No            |
+| GET    | `/appointments/{insuredId}` | Get appointments by insured ID | No            |
+
+---
+
+### 🔸 Create Appointment
+
+Creates a new medical appointment request for processing.
+
+**Endpoint:**
 
 ```http
 POST /appointments
 Content-Type: application/json
+```
 
+**Request Body:**
+
+```json
 {
-  "insuredId": "12345",      # 5-digit insured code
-  "scheduleId": 100,         # Appointment slot ID
-  "countryISO": "PE"         # "PE" or "CL"
+  "insuredId": "12345", // Required: 5-digit insured code (can have leading zeros)
+  "scheduleId": 100, // Required: Appointment slot identifier
+  "countryISO": "PE" // Required: Country code - "PE" (Peru) or "CL" (Chile)
 }
 ```
 
-**Response:**
+**Field Validation:**
+
+- `insuredId`: String, exactly 5 digits, may have leading zeros (e.g., "00123", "12345")
+- `scheduleId`: Positive integer representing the appointment slot
+- `countryISO`: Must be either "PE" or "CL"
+
+**Success Response (201 Created):**
 
 ```json
 {
@@ -161,39 +299,197 @@ Content-Type: application/json
   "scheduleId": 100,
   "countryISO": "PE",
   "status": "pending",
-  "createdAt": "2024-09-11T10:30:00.000Z",
-  "updatedAt": "2024-09-11T10:30:00.000Z"
+  "createdAt": "2025-09-12T17:34:21.475Z",
+  "updatedAt": "2025-09-12T17:34:21.475Z"
 }
 ```
 
-#### 🔸 Get Appointments
+**Error Responses:**
 
-```http
-GET /appointments/{insuredId}?status=pending&limit=10&lastKey=xyz
+```json
+// 400 Bad Request - Invalid input
+{
+  "error": "ValidationError",
+  "message": "Invalid input data",
+  "details": [
+    {
+      "field": "insuredId",
+      "message": "Must be exactly 5 digits"
+    }
+  ]
+}
+
+// 500 Internal Server Error - Server error
+{
+  "error": "InternalServerError",
+  "message": "An unexpected error occurred"
+}
 ```
 
-**Response:**
+**cURL Examples:**
+
+```bash
+# Local development
+curl -X POST "http://localhost:3000/appointments" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "insuredId": "12345",
+    "scheduleId": 100,
+    "countryISO": "PE"
+  }'
+
+# AWS development environment
+curl -X POST "https://8oafjkqvti.execute-api.us-east-1.amazonaws.com/dev/appointments" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "insuredId": "55555",
+    "scheduleId": 500,
+    "countryISO": "CL"
+  }'
+```
+
+---
+
+### 🔸 Get Appointments
+
+Retrieves all appointments for a specific insured user.
+
+**Endpoint:**
+
+```http
+GET /appointments/{insuredId}?status={status}&limit={limit}&lastKey={lastKey}
+```
+
+**Path Parameters:**
+
+- `insuredId` (required): 5-digit insured code
+
+**Query Parameters:**
+
+- `status` (optional): Filter by appointment status (`pending`, `completed`, `failed`)
+- `limit` (optional): Number of results to return (default: 50, max: 100)
+- `lastKey` (optional): Pagination token for next page
+
+**Success Response (200 OK):**
 
 ```json
 {
   "appointments": [
     {
-      "appointmentId": "01J7N123ABCDEFGHIJKLMNPQRS",
-      "scheduleId": 100,
+      "appointmentId": "01K4ZGVVZDPG1SNDRP75WZSK0A",
+      "scheduleId": 500,
       "countryISO": "PE",
-      "status": "completed",
-      "createdAt": "2024-09-11T10:30:00.000Z",
-      "updatedAt": "2024-09-11T15:45:00.000Z"
+      "status": "pending",
+      "createdAt": "2025-09-12T17:51:42.061Z",
+      "updatedAt": "2025-09-12T17:51:42.061Z"
+    },
+    {
+      "appointmentId": "01K4ZFW3RGXKFMRQY0PQEV2442",
+      "scheduleId": 400,
+      "countryISO": "PE",
+      "status": "pending",
+      "createdAt": "2025-09-12T17:34:21.475Z",
+      "updatedAt": "2025-09-12T17:34:21.475Z"
     }
   ],
   "pagination": {
-    "total": 1,
+    "total": 2,
     "limit": 50,
     "hasMore": false,
     "lastKey": null
   }
 }
 ```
+
+**Error Responses:**
+
+```json
+// 404 Not Found - No appointments found
+{
+  "appointments": [],
+  "pagination": {
+    "total": 0,
+    "limit": 50,
+    "hasMore": false,
+    "lastKey": null
+  }
+}
+
+// 400 Bad Request - Invalid insured ID
+{
+  "error": "ValidationError",
+  "message": "Invalid insuredId format. Must be exactly 5 digits."
+}
+```
+
+**cURL Examples:**
+
+```bash
+# Get all appointments for insured user
+curl "http://localhost:3000/appointments/12345"
+
+# Get appointments with filtering (AWS dev environment)
+curl "https://8oafjkqvti.execute-api.us-east-1.amazonaws.com/dev/appointments/55555?status=pending&limit=10"
+
+# Get appointments with pagination
+curl "https://8oafjkqvti.execute-api.us-east-1.amazonaws.com/dev/appointments/55555?lastKey=xyz&limit=5"
+```
+
+---
+
+### Status Codes Reference
+
+| Code | Status              | Description                                    |
+| ---- | ------------------- | ---------------------------------------------- |
+| 200  | OK                  | Request successful, appointments retrieved     |
+| 201  | Created             | Appointment created successfully               |
+| 400  | Bad Request         | Invalid input data or malformed request        |
+| 404  | Not Found           | No appointments found for the given insured ID |
+| 500  | Internal Error      | Server error occurred during processing        |
+| 502  | Bad Gateway         | Downstream service error (SNS/SQS issues)      |
+| 503  | Service Unavailable | Temporary service unavailability               |
+
+### Appointment Status Flow
+
+```mermaid
+graph LR
+    A[pending] --> B[completed]
+    A --> C[failed]
+    B --> D[archived]
+    C --> E[retry]
+    E --> A
+```
+
+**Status Descriptions:**
+
+- `pending`: Appointment created, waiting for country-specific processing
+- `completed`: Successfully processed and stored in country database
+- `failed`: Processing failed due to business rules or system errors
+- `archived`: Old completed appointments (cleanup process)
+- `retry`: Failed appointments queued for retry
+
+### Rate Limiting
+
+The API implements the following rate limits:
+
+- **Burst Limit**: 200 requests per second
+- **Rate Limit**: 100 requests per second sustained
+- **Daily Limit**: 10,000 requests per day per IP (production)
+
+When rate limits are exceeded, you'll receive:
+
+```json
+{
+  "error": "TooManyRequests",
+  "message": "Rate limit exceeded. Try again later.",
+  "retryAfter": 60
+}
+```
+
+}
+}
+
+````
 
 ### Status Codes
 
@@ -220,7 +516,7 @@ pnpm run dev
 
 # Setup LocalStack resources (first time only)
 pnpm run local:setup
-```
+````
 
 ### Available Scripts
 
@@ -361,32 +657,236 @@ npx typedoc src/
 
 ## 🚀 Deployment
 
-### Deployment Stages
+### Complete Deployment Tutorial
 
-| Stage  | Environment | Purpose               |
-| ------ | ----------- | --------------------- |
-| `dev`  | Development | Testing & development |
-| `qa`   | Staging     | Integration testing   |
-| `prod` | Production  | Live environment      |
+This section provides a step-by-step guide to deploy the Medical Appointments API to AWS.
 
-### Deploy Commands
+#### Prerequisites Checklist
+
+Before deploying, ensure you have completed:
+
+- ✅ [AWS Setup](#-aws-setup-required-for-deployment) - AWS account and credentials configured
+- ✅ Node.js 20.x installed and dependencies installed (`pnpm install`)
+- ✅ All tests passing (`pnpm run test`)
+- ✅ AWS CLI configured and verified (`aws sts get-caller-identity`)
+
+#### Step 1: Environment Verification
 
 ```bash
-# Deploy to development
+# Verify your setup
+node --version          # Should show v20.x or higher
+aws --version          # Should show AWS CLI v2.x
+aws sts get-caller-identity  # Should show your AWS account details
+
+# Verify dependencies
+pnpm run test          # All tests should pass
+pnpm run lint          # No linting errors
+pnpm run typecheck     # No TypeScript errors
+```
+
+#### Step 2: Configure Deployment Environment
+
+**Option A: Quick Setup with Template (Recommended for first deployment)**
+
+```bash
+# Copy the environment template
+cp .env.aws.example .env.aws
+
+# Edit .env.aws and replace placeholder values:
+# - AWS_ACCOUNT_ID=123456789012 → Your actual 12-digit AWS Account ID
+# - Optionally adjust other settings (region, tags, etc.)
+
+# Deploy to development stage
 pnpm run deploy:dev
+```
+
+**Option B: Custom Environment Configuration**
+
+```bash
+# For production, create production environment file
+cp .env.aws.example .env.production
+
+# Edit .env.production with production-specific values:
+# - Set STAGE=prod
+# - Set NODE_ENV=production
+# - Set AWS_ACCOUNT_ID to your actual account ID
+# - Configure production database credentials if needed
+# - Adjust performance settings for production load
 
 # Deploy to production
 pnpm run deploy:prod
-
-# Custom stage
-serverless deploy --stage qa
 ```
 
-### Pre-deployment Checklist
+**⚠️ Important Notes:**
 
-- [ ] All tests passing (`pnpm test`)
-- [ ] TypeScript compilation successful (`pnpm run build`)
-- [ ] Linting checks passed (`pnpm run lint`)
+- The `.env.aws.example` file contains detailed explanations for each variable
+- Most AWS resources (SNS, SQS, DynamoDB) are auto-created during deployment
+- Only AWS_ACCOUNT_ID needs to be manually configured
+- Other variables can use the provided defaults for development
+
+#### Step 3: Deploy to AWS
+
+```bash
+# Deploy development environment
+pnpm run deploy:dev
+
+# Expected output:
+# ✔ Service deployed to stack medical-appointments-api-dev (120s)
+#
+# endpoints:
+#   POST - https://your-api-id.execute-api.us-east-1.amazonaws.com/dev/appointments
+#   GET - https://your-api-id.execute-api.us-east-1.amazonaws.com/dev/appointments/{insuredId}
+# functions:
+#   appointment: medical-appointments-api-dev-appointment (1.6 MB)
+#   getAppointments: medical-appointments-api-dev-getAppointments (1.6 MB)
+#   appointmentCompletion: medical-appointments-api-dev-appointmentCompletion (1.6 MB)
+#   appointmentPe: medical-appointments-api-dev-appointmentPe (1.6 MB)
+#   appointmentCl: medical-appointments-api-dev-appointmentCl (1.6 MB)
+```
+
+#### Step 4: Verify Deployment
+
+After successful deployment, test your API endpoints:
+
+```bash
+# Replace YOUR_API_URL with the URL from deployment output
+export API_URL="https://your-api-id.execute-api.us-east-1.amazonaws.com/dev"
+
+# Test GET endpoint (should return empty appointments list)
+curl "$API_URL/appointments/12345"
+
+# Test POST endpoint (create new appointment)
+curl -X POST "$API_URL/appointments" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "insuredId": "12345",
+    "scheduleId": 100,
+    "countryISO": "PE"
+  }'
+
+# Expected response:
+# {
+#   "appointmentId": "01HX...",
+#   "insuredId": "12345",
+#   "scheduleId": 100,
+#   "countryISO": "PE",
+#   "status": "pending",
+#   "createdAt": "2025-09-12T..."
+# }
+```
+
+#### Step 5: Monitor Your Deployment
+
+Access AWS CloudWatch for monitoring:
+
+```bash
+# View logs for main appointment function
+serverless logs -f appointment --stage dev
+
+# View logs for specific country processing
+serverless logs -f appointmentPe --stage dev
+serverless logs -f appointmentCl --stage dev
+
+# View all logs in real-time
+serverless logs -f appointment --stage dev --tail
+```
+
+### Deployment Stages
+
+| Stage  | Environment | Purpose               | Command                        |
+| ------ | ----------- | --------------------- | ------------------------------ |
+| `dev`  | Development | Testing & development | `pnpm run deploy:dev`          |
+| `qa`   | Staging     | Integration testing   | `serverless deploy --stage qa` |
+| `prod` | Production  | Live environment      | `pnpm run deploy:prod`         |
+
+### Advanced Deployment Options
+
+#### Custom Stage Deployment
+
+```bash
+# Deploy to custom stage
+serverless deploy --stage staging --region us-west-2
+
+# Deploy specific function only
+serverless deploy function -f appointment --stage dev
+
+# Deploy with verbose output
+serverless deploy --stage dev --verbose
+```
+
+#### Environment-Specific Configuration
+
+Create stage-specific configuration files:
+
+```bash
+# For staging environment
+cp .env.aws .env.staging
+
+# Edit .env.staging with staging-specific values
+# Then deploy:
+serverless deploy --stage staging
+```
+
+### Cleanup and Removal
+
+To remove deployed resources:
+
+```bash
+# Remove development stack
+serverless remove --stage dev
+
+# Remove specific stage
+serverless remove --stage prod
+
+# ⚠️  WARNING: This will delete ALL resources including data!
+# Make sure to backup any important data before removal
+```
+
+### Deployment Troubleshooting
+
+#### Common Issues and Solutions
+
+**Issue: "AWS credentials not found"**
+
+```bash
+# Solution: Reconfigure AWS CLI
+aws configure
+aws sts get-caller-identity  # Verify credentials
+```
+
+**Issue: "Insufficient permissions"**
+
+```bash
+# Solution: Check IAM user has required policies
+# Required: PowerUserAccess or specific serverless policies
+```
+
+**Issue: "Function timeout during deployment"**
+
+```bash
+# Solution: Increase deployment timeout
+serverless deploy --stage dev --timeout 300
+```
+
+**Issue: "Stack rollback"**
+
+```bash
+# Solution: Check CloudFormation events
+aws cloudformation describe-stack-events \
+  --stack-name medical-appointments-api-dev
+```
+
+### Post-Deployment Checklist
+
+After successful deployment:
+
+- ✅ Test both API endpoints (GET and POST)
+- ✅ Verify AWS resources created in CloudFormation console
+- ✅ Check DynamoDB table exists and is accessible
+- ✅ Verify SNS topic and SQS queues are created
+- ✅ Monitor CloudWatch logs for any errors
+- ✅ Update DNS/load balancer if needed for production
+- ✅ Set up monitoring alerts for production environments
 - [ ] Environment variables configured
 - [ ] RDS databases provisioned
 - [ ] VPC configuration set
@@ -402,6 +902,50 @@ serverless logs -f appointment --tail
 ```
 
 ## 🔧 Configuration
+
+### Environment Variables
+
+The application uses different environment files for different deployment scenarios:
+
+#### 📄 Local Development (`.env`)
+
+- **Purpose**: LocalStack + Docker development
+- **Configuration**: LocalStack endpoints, test credentials
+- **Setup**: `cp .env.example .env` (if not exists)
+- **Usage**: `pnpm run dev` or `pnpm run local:start`
+
+#### 📄 Local Development Template (`.env.example`)
+
+- **Purpose**: Template for local development configuration
+- **Contains**: LocalStack endpoints, Docker MySQL settings, test credentials
+- **Pre-configured**: Ready for LocalStack + Docker development
+
+#### 📄 AWS Deployment (`.env.aws`)
+
+- **Purpose**: Real AWS deployment (development/production)
+- **Configuration**: Real AWS Account ID, resource ARNs
+- **Setup**: `cp .env.aws.example .env.aws`
+
+#### 📄 AWS Deployment Template (`.env.aws.example`)
+
+- **Purpose**: Template with explanations and defaults
+- **Contains**:
+  - Detailed comments for each variable
+  - Safe placeholder values
+  - Configuration instructions
+  - Deployment workflow guide
+
+**Quick Setup:**
+
+```bash
+# For AWS deployment
+cp .env.aws.example .env.aws
+# Edit .env.aws with your AWS Account ID (123456789012 → your actual ID)
+
+# For local development
+cp .env.example .env    # Create local config from template (if .env doesn't exist)
+# .env file is already optimized for LocalStack + Docker
+```
 
 ### AWS Services Configuration
 
@@ -501,7 +1045,213 @@ Structured logging with Pino:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👥 Authors
+## � Monitoring & Verification
+
+### Real-time Monitoring
+
+#### CloudWatch Dashboards
+
+Access your deployment metrics:
+
+1. **AWS Console**: Go to [CloudWatch Dashboards](https://console.aws.amazon.com/cloudwatch/home#dashboards)
+2. **Metrics to Monitor**:
+   - Lambda function invocations and errors
+   - API Gateway request count and latency
+   - DynamoDB read/write capacity and throttles
+   - SQS queue depth and message processing
+
+#### Log Monitoring
+
+```bash
+# Monitor appointment function logs in real-time
+serverless logs -f appointment --stage dev --tail
+
+# Check for errors in country processing
+serverless logs -f appointmentPe --stage dev --startTime 30m
+
+# View all function logs
+for func in appointment getAppointments appointmentPe appointmentCl appointmentCompletion; do
+  echo "=== $func logs ==="
+  serverless logs -f $func --stage dev --startTime 10m
+done
+```
+
+### Health Checks & Verification
+
+#### Automated Health Check Script
+
+Create a simple health check script:
+
+```bash
+#!/bin/bash
+# health-check.sh
+API_URL="https://8oafjkqvti.execute-api.us-east-1.amazonaws.com/dev"
+
+echo "🏥 Medical Appointments API Health Check"
+echo "========================================"
+
+# Test GET endpoint
+echo "📋 Testing GET endpoint..."
+response=$(curl -s -w "%{http_code}" "$API_URL/appointments/99999")
+http_code=${response: -3}
+
+if [ "$http_code" = "200" ]; then
+    echo "✅ GET endpoint: HEALTHY"
+else
+    echo "❌ GET endpoint: UNHEALTHY (HTTP $http_code)"
+fi
+
+# Test POST endpoint
+echo "📝 Testing POST endpoint..."
+response=$(curl -s -w "%{http_code}" -X POST "$API_URL/appointments" \
+  -H "Content-Type: application/json" \
+  -d '{"insuredId":"99999","scheduleId":999,"countryISO":"PE"}')
+http_code=${response: -3}
+
+if [ "$http_code" = "201" ]; then
+    echo "✅ POST endpoint: HEALTHY"
+else
+    echo "❌ POST endpoint: UNHEALTHY (HTTP $http_code)"
+fi
+
+echo "========================================"
+echo "🏥 Health check complete!"
+```
+
+#### Performance Monitoring
+
+**Key Metrics to Track:**
+
+| Metric             | Target  | Alert Threshold |
+| ------------------ | ------- | --------------- |
+| API Response Time  | < 500ms | > 2000ms        |
+| Lambda Duration    | < 5s    | > 25s           |
+| Error Rate         | < 1%    | > 5%            |
+| DynamoDB Throttles | 0       | > 0             |
+| SQS Queue Depth    | < 10    | > 100           |
+
+#### AWS Resource Verification
+
+**Check Deployed Resources:**
+
+```bash
+# Verify CloudFormation stack
+aws cloudformation describe-stacks \
+  --stack-name medical-appointments-api-dev \
+  --query 'Stacks[0].StackStatus'
+
+# List Lambda functions
+aws lambda list-functions \
+  --query 'Functions[?contains(FunctionName, `medical-appointments-api-dev`)].FunctionName'
+
+# Check DynamoDB table
+aws dynamodb describe-table \
+  --table-name medical-appointments-api-appointments-dev \
+  --query 'Table.TableStatus'
+
+# Verify SNS topic
+aws sns list-topics \
+  --query 'Topics[?contains(TopicArn, `medical-appointments-api-appointment-notifications-dev`)]'
+
+# Check SQS queues
+aws sqs list-queues \
+  --query 'QueueUrls[?contains(@, `medical-appointments-api`)]'
+```
+
+### Troubleshooting Common Issues
+
+#### Issue: Functions Not Processing Messages
+
+**Diagnosis:**
+
+```bash
+# Check SQS queue depths
+aws sqs get-queue-attributes \
+  --queue-url "https://sqs.us-east-1.amazonaws.com/YOUR_ACCOUNT/medical-appointments-api-appointment-pe-dev" \
+  --attribute-names ApproximateNumberOfMessages
+
+# Check dead letter queues
+aws sqs get-queue-attributes \
+  --queue-url "https://sqs.us-east-1.amazonaws.com/YOUR_ACCOUNT/medical-appointments-api-appointment-pe-dlq-dev" \
+  --attribute-names ApproximateNumberOfMessages
+```
+
+**Solution:**
+
+- Check Lambda function logs for errors
+- Verify IAM permissions for SQS access
+- Check EventBridge rules configuration
+
+#### Issue: High API Latency
+
+**Diagnosis:**
+
+```bash
+# Check CloudWatch metrics
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/Lambda \
+  --metric-name Duration \
+  --dimensions Name=FunctionName,Value=medical-appointments-api-dev-appointment \
+  --start-time $(date -u -d '1 hour ago' '+%Y-%m-%dT%H:%M:%S') \
+  --end-time $(date -u '+%Y-%m-%dT%H:%M:%S') \
+  --period 300 \
+  --statistics Average,Maximum
+```
+
+**Solutions:**
+
+- Check DynamoDB throttling
+- Review Lambda function memory allocation
+- Optimize database queries
+
+#### Issue: Appointment Status Not Updating
+
+**Diagnosis:**
+
+```bash
+# Check completion queue processing
+serverless logs -f appointmentCompletion --stage dev --startTime 1h
+
+# Verify EventBridge rules
+aws events list-rules --name-prefix medical-appointments-api-dev
+```
+
+**Solutions:**
+
+- Verify EventBridge target configuration
+- Check SQS completion queue permissions
+- Review country Lambda EventBridge publish permissions
+
+### Cost Monitoring
+
+**Set up AWS Budgets** to monitor costs:
+
+```bash
+# Create a simple budget alert
+aws budgets create-budget \
+  --account-id YOUR_ACCOUNT_ID \
+  --budget '{
+    "BudgetName": "Medical-Appointments-API-Budget",
+    "BudgetLimit": {
+      "Amount": "10.00",
+      "Unit": "USD"
+    },
+    "TimeUnit": "MONTHLY",
+    "BudgetType": "COST"
+  }'
+```
+
+**Expected Monthly Costs (Development):**
+
+- Lambda: $0.00 - $2.00 (within free tier)
+- DynamoDB: $0.00 - $1.00 (within free tier)
+- API Gateway: $0.00 - $3.50 (1M requests)
+- SNS/SQS: $0.00 - $0.50 (within free tier)
+- **Total**: ~$5.00/month for development usage
+
+---
+
+## �👥 Authors
 
 - **Miguel Martin** - _Initial work_ - [@mmartinrm97](https://github.com/mmartinrm97)
 

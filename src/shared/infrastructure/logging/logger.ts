@@ -1,86 +1,87 @@
 /**
- * Structured logging configuration with Pino
- * Provides consistent logging across all Lambda functions
+ * Optimized Lambda logging utility
+ * Uses native console methods for best performance in AWS Lambda
  */
 
-import pino from 'pino';
-import { env } from '../config/env.js';
+interface LogContext {
+  [key: string]: unknown;
+}
+
+interface Logger {
+  info: (message: string, context?: LogContext) => void;
+  error: (message: string, context?: LogContext) => void;
+  warn: (message: string, context?: LogContext) => void;
+  debug: (message: string, context?: LogContext) => void;
+}
 
 /**
- * Logger configuration based on environment
+ * Creates a logger with optional context
+ * Optimized for AWS Lambda - uses console methods directly
  */
-const loggerConfig: pino.LoggerOptions = {
-  level: env.LOG_LEVEL,
-  base: {
-    service: 'medical-appointments-api',
-    stage: env.STAGE,
-    version: '1.0.0',
+const createLogger = (baseContext: LogContext = {}): Logger => ({
+  info: (message: string, context: LogContext = {}) => {
+    console.log(JSON.stringify({
+      level: 'INFO',
+      message,
+      timestamp: new Date().toISOString(),
+      ...baseContext,
+      ...context
+    }));
   },
-  // Production: JSON format for CloudWatch
-  // Development: Pretty format for local development
-  transport:
-    env.NODE_ENV === 'development'
-      ? {
-          target: 'pino-pretty',
-          options: {
-            colorize: true,
-            translateTime: 'SYS:standard',
-          },
-        }
-      : undefined,
-  // Don't log in test environment unless specified
-  enabled: !(env.NODE_ENV === 'test' && env.LOG_LEVEL !== 'debug'),
-};
 
-/**
- * Global logger instance
- */
-export const logger = pino(loggerConfig);
+  error: (message: string, context: LogContext = {}) => {
+    console.error(JSON.stringify({
+      level: 'ERROR',
+      message,
+      timestamp: new Date().toISOString(),
+      ...baseContext,
+      ...context
+    }));
+  },
 
-/**
- * Create a child logger with additional context
- *
- * @param context - Additional context to include in all log messages
- * @returns Child logger instance
- *
- * @example
- * ```typescript
- * const handlerLogger = createLogger({ handler: 'postAppointment' });
- * handlerLogger.info('Processing request');
- * ```
- */
-export const createLogger = (context: Record<string, unknown>) => {
-  return logger.child(context);
-};
+  warn: (message: string, context: LogContext = {}) => {
+    console.warn(JSON.stringify({
+      level: 'WARN',
+      message,
+      timestamp: new Date().toISOString(),
+      ...baseContext,
+      ...context
+    }));
+  },
 
-/**
- * Logger for specific Lambda function
- *
- * @param functionName - Name of the Lambda function
- * @returns Logger instance with function context
- */
-export const createFunctionLogger = (functionName: string) => {
+  debug: (message: string, context: LogContext = {}) => {
+    console.log(JSON.stringify({
+      level: 'DEBUG',
+      message,
+      timestamp: new Date().toISOString(),
+      ...baseContext,
+      ...context
+    }));
+  }
+});
+
+// Default logger instance
+export const logger = createLogger();
+
+// Factory function for contextual loggers
+export { createLogger };
+
+// Lambda function logger with function name context
+export const createFunctionLogger = (functionName: string): Logger => {
   return createLogger({ function: functionName });
 };
 
-/**
- * Utility to safely log errors without sensitive data
- *
- * @param error - Error object to log
- * @param context - Additional context
- */
+// Error logging utility
 export const logError = (
   error: unknown,
-  context: Record<string, unknown> = {}
-) => {
-  const errorContext = {
-    ...context,
-    error: {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : 'Error',
-    },
-  };
+  context: LogContext = {}
+): void => {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  const errorStack = error instanceof Error ? error.stack : undefined;
 
-  logger.error(errorContext, 'Error occurred');
+  logger.error('Error occurred', {
+    ...context,
+    error: errorMessage,
+    stack: errorStack
+  });
 };

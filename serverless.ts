@@ -5,6 +5,8 @@ const serverlessConfiguration: AWS = {
     service: "medical-appointments-api",
     frameworkVersion: "4",
     useDotenv: true,
+    org: "mmartinrm97",
+    app: "medical-appointments-system",
     build: {
         esbuild: {
             bundle: true,
@@ -24,9 +26,6 @@ const serverlessConfiguration: AWS = {
                 // Database drivers that should remain external
                 'mysql2',
                 'mysql2/promise',
-                // Logging libraries - externalize to avoid ESM/CommonJS conflicts
-                'pino',
-                'pino-pretty',
                 // Other packages that might cause bundling issues
                 'aws-lambda'
             ],
@@ -35,7 +34,7 @@ const serverlessConfiguration: AWS = {
     plugins: [
         "serverless-offline",
         "serverless-openapi-documenter",
-        "serverless-localstack",
+        // "serverless-localstack", // Comentado para deploy a AWS real
     ],
 
     // ---------- Stage-aware parameters ----------
@@ -54,6 +53,7 @@ const serverlessConfiguration: AWS = {
 
             // SQS tuning parameters
             SQS_VISIBILITY_TIMEOUT: "${opt:sqsTimeout, env:SQS_VISIBILITY_TIMEOUT, '360'}",
+            SQS_COMPLETION_TIMEOUT: "${opt:sqsCompletionTimeout, env:SQS_COMPLETION_TIMEOUT, '180'}",
             SQS_MAX_RECEIVE: "${opt:sqsMaxReceive, env:SQS_MAX_RECEIVE, '3'}",
             SQS_LONG_POLLING: "${opt:sqsPolling, env:SQS_LONG_POLLING, '20'}",
 
@@ -143,12 +143,12 @@ const serverlessConfiguration: AWS = {
 
             // DynamoDB
             APPOINTMENTS_TABLE: "${self:service}-appointments-${self:provider.stage}",
-            // SNS - Use direct ARN for local development
-            SNS_TOPIC_ARN: "${param:SNS_TOPIC_ARN, 'arn:aws:sns:us-east-1:000000000000:medical-appointments-api-appointment-notifications-dev'}",
-            // SQS - Use direct URLs for local development  
-            SQS_PE_URL: "${param:SQS_PE_URL, 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/medical-appointments-api-appointment-pe-dev'}",
-            SQS_CL_URL: "${param:SQS_CL_URL, 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/medical-appointments-api-appointment-cl-dev'}",
-            SQS_COMPLETION_URL: "${param:SQS_COMPLETION_URL, 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/medical-appointments-api-appointment-completion-dev'}",
+            // SNS - Dynamic reference to SNS topic created in this stack
+            SNS_TOPIC_ARN: { "Ref": "AppointmentNotificationsTopic" },
+            // SQS - Dynamic references to SQS queues created in this stack  
+            SQS_PE_URL: { "Ref": "AppointmentPeQueue" },
+            SQS_CL_URL: { "Ref": "AppointmentClQueue" },
+            SQS_COMPLETION_URL: { "Ref": "AppointmentCompletionQueue" },
             // EventBridge
             EVENT_BUS_NAME: "${param:EVENT_BUS_NAME,'default'}",
 
@@ -280,7 +280,7 @@ const serverlessConfiguration: AWS = {
         // ✅ Inherits memorySize from provider (256MB), override timeout for SQS
         appointmentCompletion: {
             handler: "src/modules/appointments/interfaces/sqs/processCompletedAppointmentQueue.handler",
-            timeout: 60, // Override: SQS processing needs more time
+            timeout: 25, // Must be < queue visibility timeout (30s default)
             events: [
                 {
                     sqs: {
@@ -295,7 +295,7 @@ const serverlessConfiguration: AWS = {
         // ✅ Explicit override: needs more resources for heavy processing
         appointmentPe: {
             handler: "src/modules/appointments/interfaces/sqs/processPendingAppointmentQueue.handler",
-            timeout: 60,     // Override: SQS + RDS operations need more time
+            timeout: 25,     // Must be < queue visibility timeout (30s default)
             memorySize: 512, // Override: Heavy processing needs more memory
             events: [
                 {
@@ -311,7 +311,7 @@ const serverlessConfiguration: AWS = {
         // ✅ Explicit override: needs more resources for heavy processing
         appointmentCl: {
             handler: "src/modules/appointments/interfaces/sqs/processPendingAppointmentQueue.handler",
-            timeout: 60,     // Override: SQS + RDS operations need more time
+            timeout: 25,     // Must be < queue visibility timeout (30s default)
             memorySize: 512, // Override: Heavy processing needs more memory
             events: [
                 {
@@ -544,7 +544,7 @@ const serverlessConfiguration: AWS = {
                 Type: "AWS::SQS::Queue",
                 Properties: {
                     QueueName: "${self:service}-appointment-completion-${self:provider.stage}",
-                    VisibilityTimeoutSeconds: 180, // 3 minutes - faster for completion processing
+                    VisibilityTimeoutSeconds: 180, // Must be > function timeout (60s) - hardcoded to ensure correct value
                     MessageRetentionPeriod: 1209600, // 14 days
                     ReceiveMessageWaitTimeSeconds: "${param:SQS_LONG_POLLING}", // Long polling optimization
                     RedrivePolicy: {
