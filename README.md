@@ -352,12 +352,6 @@ pnpm run docs:postman      # Creates Postman collection
 - `docs/api/openapi.json` - JSON format
 - `docs/api/postman-collection.json` - Postman collection
 
-### Architecture Documentation
-
-- **[Technical Challenge](docs/instructions/technical-challenge.md)** - Original requirements
-- **[Development Instructions](docs/instructions/instructions.md)** - Setup guide
-- **[Project Checklist](docs/instructions/checklist.md)** - Development progress
-
 ### Code Documentation
 
 ```bash
