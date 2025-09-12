@@ -1415,8 +1415,8 @@ packages:
   axios-proxy-builder@0.1.2:
     resolution: {integrity: sha512-6uBVsBZzkB3tCC8iyx59mCjQckhB8+GQrI9Cop8eC7ybIsvs/KtnNgEBfRMSEa7GqK2VBGUzgjNYMdPIfotyPA==}
 
-  axios@1.11.0:
-    resolution: {integrity: sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==}
+  axios@1.12.1:
+    resolution: {integrity: sha512-Kn4kbSXpkFHCGE6rBFNwIv0GQs4AvDT80jlveJDKFxjbTYMUeB4QtsdPCv6H8Cm19Je7IU6VFtRl2zWZI0rudQ==}
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
@@ -5289,7 +5289,7 @@ snapshots:
     dependencies:
       tunnel: 0.0.6
 
-  axios@1.11.0:
+  axios@1.12.1:
     dependencies:
       follow-redirects: 1.15.11
       form-data: 4.0.4
@@ -6679,7 +6679,7 @@ snapshots:
 
   serverless@4.18.2:
     dependencies:
-      axios: 1.11.0
+      axios: 1.12.1
       axios-proxy-builder: 0.1.2
       rimraf: 5.0.10
       xml2js: 0.6.2

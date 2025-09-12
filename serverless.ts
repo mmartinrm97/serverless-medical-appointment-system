@@ -34,7 +34,7 @@ const serverlessConfiguration: AWS = {
     plugins: [
         "serverless-offline",
         "serverless-openapi-documenter",
-        // "serverless-localstack", // Comentado para deploy a AWS real
+        "serverless-localstack",
     ],
 
     // ---------- Stage-aware parameters ----------
@@ -70,6 +70,12 @@ const serverlessConfiguration: AWS = {
         },
 
         dev: {
+            // LocalStack hardcoded values (CloudFormation refs don't work in LocalStack)
+            SNS_TOPIC_ARN: "arn:aws:sns:us-east-1:000000000000:medical-appointments-api-appointment-notifications-dev",
+            SQS_PE_URL: "arn:aws:sqs:us-east-1:000000000000:medical-appointments-api-appointment-pe-dev",
+            SQS_CL_URL: "arn:aws:sqs:us-east-1:000000000000:medical-appointments-api-appointment-cl-dev",
+            SQS_COMPLETION_URL: "arn:aws:sqs:us-east-1:000000000000:medical-appointments-api-appointment-completion-dev",
+
             DB_HOST_PE: "${env:DB_HOST_PE, '127.0.0.1'}",
             DB_PORT_PE: "${env:DB_PORT_PE, '3306'}",
             DB_NAME_PE: "${env:DB_NAME_PE, 'medical_pe'}",
@@ -88,6 +94,12 @@ const serverlessConfiguration: AWS = {
         },
 
         staging: {
+            // AWS CloudFormation dynamic references (real AWS resources)
+            SNS_TOPIC_ARN: { Ref: "AppointmentNotificationsTopic" },
+            SQS_PE_URL: { "Fn::GetAtt": ["AppointmentPeQueue", "Arn"] },
+            SQS_CL_URL: { "Fn::GetAtt": ["AppointmentClQueue", "Arn"] },
+            SQS_COMPLETION_URL: { "Fn::GetAtt": ["AppointmentCompletionQueue", "Arn"] },
+
             DB_HOST_PE: "${ssm:/medical-appointments/staging/db/host/pe, env:DB_HOST_PE}",
             DB_PORT_PE: "${ssm:/medical-appointments/staging/db/port/pe, env:DB_PORT_PE}",
             DB_NAME_PE: "${ssm:/medical-appointments/staging/db/name/pe, env:DB_NAME_PE}",
@@ -105,6 +117,12 @@ const serverlessConfiguration: AWS = {
         },
 
         prod: {
+            // AWS CloudFormation dynamic references (real AWS resources)
+            SNS_TOPIC_ARN: { Ref: "AppointmentNotificationsTopic" },
+            SQS_PE_URL: { "Fn::GetAtt": ["AppointmentPeQueue", "Arn"] },
+            SQS_CL_URL: { "Fn::GetAtt": ["AppointmentClQueue", "Arn"] },
+            SQS_COMPLETION_URL: { "Fn::GetAtt": ["AppointmentCompletionQueue", "Arn"] },
+
             DB_HOST_PE: "${ssm:/medical-appointments/prod/db/host/pe, env:DB_HOST_PE}",
             DB_PORT_PE: "${ssm:/medical-appointments/prod/db/port/pe, env:DB_PORT_PE}",
             DB_NAME_PE: "${ssm:/medical-appointments/prod/db/name/pe, env:DB_NAME_PE}",
@@ -144,11 +162,12 @@ const serverlessConfiguration: AWS = {
             // DynamoDB
             APPOINTMENTS_TABLE: "${self:service}-appointments-${self:provider.stage}",
             // SNS - Dynamic reference to SNS topic created in this stack
-            SNS_TOPIC_ARN: { "Ref": "AppointmentNotificationsTopic" },
-            // SQS - Dynamic references to SQS queues created in this stack  
-            SQS_PE_URL: { "Ref": "AppointmentPeQueue" },
-            SQS_CL_URL: { "Ref": "AppointmentClQueue" },
-            SQS_COMPLETION_URL: { "Ref": "AppointmentCompletionQueue" },
+            SNS_TOPIC_ARN: "${param:SNS_TOPIC_ARN}",
+
+            // SQS - Dynamic references to SQS queues created in this stack
+            SQS_PE_URL: "${param:SQS_PE_URL}",
+            SQS_CL_URL: "${param:SQS_CL_URL}",
+            SQS_COMPLETION_URL: "${param:SQS_COMPLETION_URL}",
             // EventBridge
             EVENT_BUS_NAME: "${param:EVENT_BUS_NAME,'default'}",
 
@@ -849,6 +868,7 @@ const serverlessConfiguration: AWS = {
             },
         },
         "serverless-offline": {
+            stages: ["dev"],
             httpPort: 3000,
             cors: true,
             corsAllowOrigin: '*',

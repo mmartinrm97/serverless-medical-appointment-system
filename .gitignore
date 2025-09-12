@@ -149,6 +149,9 @@ volume/
 .env.test
 .env.production
 .env.aws
+.env.dev
+.env.staging
+.env.prod
 
 # Allow environment templates
 !.env.aws.example

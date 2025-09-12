@@ -13,6 +13,7 @@
     "local:setup": "node scripts/setup-localstack.js",
     "deploy": "serverless deploy",
     "deploy:dev": "serverless deploy --stage dev",
+    "deploy:staging": "serverless deploy --stage staging",
     "deploy:prod": "serverless deploy --stage prod",
     "test": "vitest run",
     "test:unit": "vitest run",
