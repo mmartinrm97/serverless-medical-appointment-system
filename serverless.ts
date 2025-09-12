@@ -1,4 +1,5 @@
 import type { AWS } from "@serverless/typescript";
+import { serverlessConfigurationDocs as docConfig } from "./serverless.doc.js";
 
 const serverlessConfiguration: AWS = {
     service: "medical-appointments-api",
@@ -274,42 +275,7 @@ const serverlessConfiguration: AWS = {
     functions: {
         // Main appointment Lambda - handles API endpoints and completion
         // ✅ Inherits memorySize and timeout from provider (256MB, 30s)
-        appointment: {
-            handler: "src/modules/appointments/interfaces/http/postAppointment.handler",
-            events: [
-                {
-                    http: {
-                        method: "post",
-                        path: "/appointments",
-                        cors: true,
-                        // @ts-ignore - OpenAPI documentation plugin extends this type
-                        documentation: "${file(serverless.doc.yml):endpoints.createAppointment}",
-                    },
-                },
-            ],
-        },
-        // ✅ Inherits memorySize and timeout from provider (256MB, 30s)
-        getAppointments: {
-            handler: "src/modules/appointments/interfaces/http/getAppointments.handler",
-            events: [
-                {
-                    http: {
-                        method: "get",
-                        path: "/appointments/{insuredId}",
-                        cors: true,
-                        // @ts-ignore - OpenAPI documentation plugin extends this type
-                        documentation: "${file(serverless.doc.yml):endpoints.getAppointments}",
-                        request: {
-                            parameters: {
-                                paths: {
-                                    insuredId: true,
-                                },
-                            },
-                        },
-                    },
-                },
-            ],
-        },
+        ...docConfig.functions,
         // Completion handler for updating appointment status
         // ✅ Inherits memorySize from provider (256MB), override timeout for SQS
         appointmentCompletion: {
@@ -869,7 +835,7 @@ const serverlessConfiguration: AWS = {
         },
     },
     custom: {
-        documentation: "${file(serverless.doc.yml):documentation}",
+        documentation: docConfig.custom?.documentation ?? {},
         localstack: {
             stages: ["dev"],
             host: "http://localhost",
